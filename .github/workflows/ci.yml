@@ -70,9 +70,9 @@ jobs:
           args: --timeout=5m
 
       - name: 🔒 Run gosec security scanner
-        run: |
-          go install github.com/securecodewarrior/gosec/cmd/gosec@latest
-          gosec -fmt sarif -out gosec.sarif ./...
+        uses: securego/gosec@master
+        with:
+          args: "-fmt sarif -out gosec.sarif ./..."
 
       - name: 📊 Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
