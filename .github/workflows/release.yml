@@ -93,7 +93,7 @@ jobs:
           go-version: "1.21"
 
       - name: 📦 Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -157,18 +157,18 @@ jobs:
         run: |
           if [ -d "services/${{ matrix.service }}" ]; then
             cd services/${{ matrix.service }}
-            
+
             # Set binary name
             BINARY_NAME="${{ matrix.service }}"
             if [ "${{ matrix.os }}" == "windows" ]; then
               BINARY_NAME="${{ matrix.service }}.exe"
             fi
-            
+
             # Build with version info
             go build -ldflags="-X main.Version=$VERSION -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
               -o "../../dist/${{ matrix.service }}-${{ matrix.os }}-${{ matrix.arch }}/$BINARY_NAME" \
               ./cmd/main.go
-              
+
             # Create archive
             cd ../../dist
             if [ "${{ matrix.os }}" == "windows" ]; then
