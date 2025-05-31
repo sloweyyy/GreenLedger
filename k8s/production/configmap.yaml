@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: greenledger-config
+  namespace: greenledger-production
+  labels:
+    app: greenledger
+    environment: production
+data:
+  # Environment
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "info"
+  
+  # Calculator Service Database
+  calculator-db-host: "calculator-postgres-production.greenledger-production.svc.cluster.local"
+  calculator-db-port: "5432"
+  calculator-db-name: "calculator_production"
+  calculator-db-user: "calculator_user"
+  
+  # Tracker Service Database
+  tracker-db-host: "tracker-postgres-production.greenledger-production.svc.cluster.local"
+  tracker-db-port: "5432"
+  tracker-db-name: "tracker_production"
+  tracker-db-user: "tracker_user"
+  
+  # Wallet Service Database
+  wallet-db-host: "wallet-postgres-production.greenledger-production.svc.cluster.local"
+  wallet-db-port: "5432"
+  wallet-db-name: "wallet_production"
+  wallet-db-user: "wallet_user"
+  
+  # User Auth Service Database
+  userauth-db-host: "userauth-postgres-production.greenledger-production.svc.cluster.local"
+  userauth-db-port: "5432"
+  userauth-db-name: "userauth_production"
+  userauth-db-user: "userauth_user"
+  
+  # Reporting Service Database
+  reporting-db-host: "reporting-postgres-production.greenledger-production.svc.cluster.local"
+  reporting-db-port: "5432"
+  reporting-db-name: "reporting_production"
+  reporting-db-user: "reporting_user"
+  
+  # Redis Configuration
+  redis-host: "redis-production.greenledger-production.svc.cluster.local"
+  redis-port: "6379"
+  redis-db: "0"
+  
+  # Kafka Configuration
+  kafka-brokers: "kafka-production.greenledger-production.svc.cluster.local:9092"
+  kafka-topics-prefix: "production"
+  
+  # Service URLs (internal gRPC communication)
+  calculator-service-url: "calculator-service.greenledger-production.svc.cluster.local:9081"
+  tracker-service-url: "tracker-service.greenledger-production.svc.cluster.local:9082"
+  wallet-service-url: "wallet-service.greenledger-production.svc.cluster.local:9083"
+  userauth-service-url: "user-auth-service.greenledger-production.svc.cluster.local:9084"
+  reporting-service-url: "reporting-service.greenledger-production.svc.cluster.local:9085"
+  
+  # External Services
+  email-service-url: "https://api.sendgrid.com/v3"
+  
+  # Application Configuration
+  jwt-expiry: "24h"
+  bcrypt-cost: "12"
+  max-report-size-mb: "50"
+  
+  # Feature Flags
+  enable-metrics: "true"
+  enable-tracing: "true"
+  enable-debug-endpoints: "true"
+  enable-rate-limiting: "true"
+  
+  # Rate Limiting
+  rate-limit-requests-per-minute: "100"
+  rate-limit-burst: "20"
+  
+  # Monitoring
+  metrics-port: "9090"
+  health-check-interval: "30s"
+  
+  # Blockchain Configuration (Staging)
+  blockchain-network: "ethereum-sepolia"
+  blockchain-chain-id: "11155111"
+  
+  # CORS Configuration
+  cors-allowed-origins: "https://production.greenledger.app,http://localhost:3000"
+  cors-allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  cors-allowed-headers: "Content-Type,Authorization,X-Requested-With"
+  
+  # API Configuration
+  api-version: "v1"
+  api-timeout: "30s"
+  max-request-size: "10MB"
+  
+  # Database Connection Pool
+  db-max-open-conns: "25"
+  db-max-idle-conns: "5"
+  db-conn-max-lifetime: "5m"
+  
+  # Cache Configuration
+  cache-ttl: "300s"
+  cache-cleanup-interval: "600s"
+  
+  # Pagination
+  default-page-size: "20"
+  max-page-size: "100"
