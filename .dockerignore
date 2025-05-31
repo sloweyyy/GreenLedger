@@ -1,0 +1,128 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+SECURITY.md
+docs/
+*.md
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+Jenkinsfile
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment files
+.env*
+!.env.example
+
+# Build artifacts
+bin/
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Test files
+*_test.go
+testdata/
+test-results/
+coverage.out
+coverage.html
+*.cover
+*.coverprofile
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Log files
+*.log
+logs/
+log/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Node.js (if you have frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend build artifacts
+frontend/dist/
+frontend/build/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+
+# Cache directories
+.cache/
+.go-cache/
+
+# Backup files
+*.bak
+*.backup
+
+# Local development files
+local/
+dev/
+
+# Kubernetes files
+k8s/
+*.yaml
+*.yml
+!docker-compose.yml
+
+# Scripts
+scripts/
+Makefile
+
+# Profiling files
+*.prof
+*.pprof
+
+# Air live reload
+.air.toml
+
+# Mock files
+*_mock.go
+mocks/
+
+# Vendor directory
+vendor/
+
+# Go workspace file
+go.work
+
+# Test coverage
+*.out
