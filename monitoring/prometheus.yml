@@ -1,0 +1,50 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'calculator-service'
+    static_configs:
+      - targets: ['calculator-service:8081']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'tracker-service'
+    static_configs:
+      - targets: ['tracker-service:8082']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'wallet-service'
+    static_configs:
+      - targets: ['wallet-service:8083']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'user-auth-service'
+    static_configs:
+      - targets: ['user-auth-service:8084']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'reporting-service'
+    static_configs:
+      - targets: ['reporting-service:8085']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']

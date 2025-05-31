@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package calculator;
+
+option go_package = "github.com/greenledger/proto/calculator";
+
+import "google/protobuf/timestamp.proto";
+
+// Calculator service for carbon footprint calculations
+service CalculatorService {
+  // Calculate carbon footprint for various activities
+  rpc CalculateFootprint(CalculateFootprintRequest) returns (CalculateFootprintResponse);
+  
+  // Get calculation history for a user
+  rpc GetCalculationHistory(GetCalculationHistoryRequest) returns (GetCalculationHistoryResponse);
+  
+  // Get emission factors
+  rpc GetEmissionFactors(GetEmissionFactorsRequest) returns (GetEmissionFactorsResponse);
+}
+
+// Activity types for carbon footprint calculation
+enum ActivityType {
+  ACTIVITY_TYPE_UNSPECIFIED = 0;
+  ACTIVITY_TYPE_VEHICLE_TRAVEL = 1;
+  ACTIVITY_TYPE_ELECTRICITY_USAGE = 2;
+  ACTIVITY_TYPE_PURCHASE = 3;
+  ACTIVITY_TYPE_FLIGHT = 4;
+  ACTIVITY_TYPE_HEATING = 5;
+}
+
+// Vehicle types
+enum VehicleType {
+  VEHICLE_TYPE_UNSPECIFIED = 0;
+  VEHICLE_TYPE_CAR_GASOLINE = 1;
+  VEHICLE_TYPE_CAR_DIESEL = 2;
+  VEHICLE_TYPE_CAR_ELECTRIC = 3;
+  VEHICLE_TYPE_CAR_HYBRID = 4;
+  VEHICLE_TYPE_MOTORCYCLE = 5;
+  VEHICLE_TYPE_BUS = 6;
+  VEHICLE_TYPE_TRAIN = 7;
+}
+
+// Purchase categories
+enum PurchaseCategory {
+  PURCHASE_CATEGORY_UNSPECIFIED = 0;
+  PURCHASE_CATEGORY_FOOD = 1;
+  PURCHASE_CATEGORY_CLOTHING = 2;
+  PURCHASE_CATEGORY_ELECTRONICS = 3;
+  PURCHASE_CATEGORY_FURNITURE = 4;
+  PURCHASE_CATEGORY_OTHER = 5;
+}
+
+// Activity data for calculation
+message ActivityData {
+  ActivityType activity_type = 1;
+  
+  // Vehicle travel data
+  VehicleData vehicle_data = 2;
+  
+  // Electricity usage data
+  ElectricityData electricity_data = 3;
+  
+  // Purchase data
+  PurchaseData purchase_data = 4;
+  
+  // Flight data
+  FlightData flight_data = 5;
+  
+  // Heating data
+  HeatingData heating_data = 6;
+}
+
+message VehicleData {
+  VehicleType vehicle_type = 1;
+  double distance_km = 2;
+  double fuel_efficiency_l_per_100km = 3;
+}
+
+message ElectricityData {
+  double kwh_usage = 1;
+  string location = 2; // For grid emission factor lookup
+}
+
+message PurchaseData {
+  PurchaseCategory category = 1;
+  double quantity = 2;
+  double price_usd = 3;
+}
+
+message FlightData {
+  string departure_airport = 1;
+  string arrival_airport = 2;
+  bool is_round_trip = 3;
+  string flight_class = 4; // economy, business, first
+}
+
+message HeatingData {
+  string fuel_type = 1; // natural_gas, oil, electric, etc.
+  double consumption = 2;
+  string unit = 3; // cubic_meters, liters, kwh
+}
+
+// Request/Response messages
+message CalculateFootprintRequest {
+  string user_id = 1;
+  repeated ActivityData activities = 2;
+  google.protobuf.Timestamp calculation_date = 3;
+}
+
+message CalculateFootprintResponse {
+  string calculation_id = 1;
+  double total_co2_kg = 2;
+  repeated ActivityResult activity_results = 3;
+  google.protobuf.Timestamp calculated_at = 4;
+}
+
+message ActivityResult {
+  ActivityData activity = 1;
+  double co2_kg = 2;
+  string emission_factor_source = 3;
+}
+
+message GetCalculationHistoryRequest {
+  string user_id = 1;
+  google.protobuf.Timestamp start_date = 2;
+  google.protobuf.Timestamp end_date = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+message GetCalculationHistoryResponse {
+  repeated CalculationRecord calculations = 1;
+  int32 total_count = 2;
+}
+
+message CalculationRecord {
+  string calculation_id = 1;
+  string user_id = 2;
+  double total_co2_kg = 3;
+  repeated ActivityResult activity_results = 4;
+  google.protobuf.Timestamp calculated_at = 5;
+}
+
+message GetEmissionFactorsRequest {
+  ActivityType activity_type = 1;
+  string location = 2; // Optional, for location-specific factors
+}
+
+message GetEmissionFactorsResponse {
+  repeated EmissionFactor factors = 1;
+}
+
+message EmissionFactor {
+  ActivityType activity_type = 1;
+  string sub_type = 2; // e.g., vehicle type, fuel type
+  double factor_co2_per_unit = 3;
+  string unit = 4; // km, kwh, kg, etc.
+  string source = 5;
+  string location = 6;
+  google.protobuf.Timestamp last_updated = 7;
+}
