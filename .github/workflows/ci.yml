@@ -35,10 +35,33 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: 📥 Download dependencies
+      - name: 📥 Download dependencies and tidy modules
         run: |
+          # Root module
+          echo "📦 Processing root module..."
           go mod download
-          cd shared && go mod download
+          go mod tidy
+
+          # Shared module
+          echo "📦 Processing shared module..."
+          if [ -d "shared" ] && [ -f "shared/go.mod" ]; then
+            cd shared
+            go mod download
+            go mod tidy
+            cd ..
+          fi
+
+          # Service modules
+          for service_dir in services/*/; do
+            if [ -d "$service_dir" ] && [ -f "$service_dir/go.mod" ]; then
+              service_name=$(basename "$service_dir")
+              echo "📦 Processing $service_name module..."
+              cd "$service_dir"
+              go mod download
+              go mod tidy
+              cd ../..
+            fi
+          done
 
       - name: 🔍 Run golangci-lint
         uses: golangci/golangci-lint-action@v3
@@ -47,9 +70,9 @@ jobs:
           args: --timeout=5m
 
       - name: 🔒 Run gosec security scanner
-        uses: securecodewarrior/github-action-gosec@master
-        with:
-          args: "-fmt sarif -out gosec.sarif ./..."
+        run: |
+          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+          gosec -fmt sarif -out gosec.sarif ./...
 
       - name: 📊 Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
@@ -82,12 +105,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: 📥 Download dependencies
+      - name: 📥 Download dependencies and tidy modules
         run: |
+          # Root module
+          echo "📦 Processing root module..."
           go mod download
-          cd shared && go mod download
-          if [ -d "services/${{ matrix.service }}" ]; then
-            cd services/${{ matrix.service }} && go mod download
+          go mod tidy
+
+          # Shared module
+          echo "📦 Processing shared module..."
+          if [ -d "shared" ] && [ -f "shared/go.mod" ]; then
+            cd shared
+            go mod download
+            go mod tidy
+            cd ..
+          fi
+
+          # Target service module
+          if [ -d "services/${{ matrix.service }}" ] && [ -f "services/${{ matrix.service }}/go.mod" ]; then
+            echo "📦 Processing ${{ matrix.service }} module..."
+            cd "services/${{ matrix.service }}"
+            go mod download
+            go mod tidy
+            cd ../..
           fi
 
       - name: 🧪 Run tests with coverage
@@ -156,6 +196,34 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+
+      - name: 📥 Download dependencies and tidy modules
+        run: |
+          # Root module
+          echo "📦 Processing root module..."
+          go mod download
+          go mod tidy
+
+          # Shared module
+          echo "📦 Processing shared module..."
+          if [ -d "shared" ] && [ -f "shared/go.mod" ]; then
+            cd shared
+            go mod download
+            go mod tidy
+            cd ..
+          fi
+
+          # Service modules
+          for service_dir in services/*/; do
+            if [ -d "$service_dir" ] && [ -f "$service_dir/go.mod" ]; then
+              service_name=$(basename "$service_dir")
+              echo "📦 Processing $service_name module..."
+              cd "$service_dir"
+              go mod download
+              go mod tidy
+              cd ../..
+            fi
+          done
 
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

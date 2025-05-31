@@ -77,16 +77,26 @@ docker-clean: ## Clean up Docker resources
 	@docker system prune -f
 	@echo "✅ Docker cleanup completed"
 
+# Dependency commands
+deps: ## Install and fix all dependencies
+	@echo "📦 Installing and fixing dependencies..."
+	@./scripts/fix-dependencies.sh
+
+deps-check: ## Check dependency status
+	@echo "🔍 Checking dependency status..."
+	@./scripts/fix-dependencies.sh check
+
+deps-fix: ## Fix dependency issues
+	@echo "🔧 Fixing dependency issues..."
+	@./scripts/fix-dependencies.sh
+
 # Development commands
-dev-setup: ## Set up development environment
+dev-setup: deps ## Set up development environment
 	@echo "Setting up development environment..."
 	@mkdir -p bin logs
-	@go mod download
-	@cd services/calculator && go mod download
-	@cd services/tracker && go mod download
-	@cd services/wallet && go mod download
-	@cd services/user-auth && go mod download
-	@cd services/reporting && go mod download
+	@echo "Installing development tools..."
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
 	@echo "✅ Development environment ready"
 
 # Database commands
@@ -96,16 +106,55 @@ migrate-up: ## Run database migrations
 	@sleep 10
 	@echo "✅ Database migrations completed"
 
+# Code quality commands
+lint: ## Run linters on all code
+	@echo "🔍 Running linters..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run ./...; \
+	else \
+		echo "⚠️ golangci-lint not installed. Run 'make dev-setup' first"; \
+	fi
+
+security: ## Run security scans
+	@echo "🔒 Running security scans..."
+	@if command -v gosec >/dev/null 2>&1; then \
+		gosec ./...; \
+	else \
+		echo "Installing gosec..."; \
+		go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
+		gosec ./...; \
+	fi
+
+format: ## Format all Go code
+	@echo "✨ Formatting code..."
+	@go fmt ./...
+	@if [ -d "shared" ]; then cd shared && go fmt ./... && cd ..; fi
+	@for service in calculator tracker wallet user-auth reporting; do \
+		if [ -d "services/$$service" ]; then \
+			cd services/$$service && go fmt ./... && cd ../..; \
+		fi; \
+	done
+
+# CI commands
+ci-local: ## Run CI pipeline locally
+	@echo "🔄 Running CI pipeline locally..."
+	@make deps
+	@make lint
+	@make test
+	@make build
+	@echo "✅ Local CI pipeline completed successfully!"
+
+check-all: deps-check lint test ## Run all checks (dependencies, linting, tests)
+
 # Utility commands
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."
 	@rm -rf bin/
 	@rm -rf logs/
-	@cd services/calculator && rm -f coverage.out coverage.html
-	@cd services/tracker && rm -f coverage.out coverage.html
-	@cd services/wallet && rm -f coverage.out coverage.html
-	@cd services/user-auth && rm -f coverage.out coverage.html
-	@cd services/reporting && rm -f coverage.out coverage.html
+	@rm -rf dist/
+	@find . -name "coverage.out" -delete
+	@find . -name "coverage.html" -delete
+	@go clean -cache
 	@echo "✅ Cleanup completed"
 
 # Quick start commands
