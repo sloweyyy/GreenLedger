@@ -136,7 +136,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 # 3. Calculate carbon footprint (use JWT token from login)
 curl -X POST http://localhost:8080/api/v1/calculator/calculate \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer <your-jwt-token-here>" \
   -d '{
     "activity_type": "vehicle",
     "distance": 100,
@@ -146,7 +146,7 @@ curl -X POST http://localhost:8080/api/v1/calculator/calculate \
 # 4. Log eco activity
 curl -X POST http://localhost:8080/api/v1/tracker/activities \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer <your-jwt-token-here>" \
   -d '{
     "activity_type": "biking",
     "distance": 10,
@@ -155,7 +155,7 @@ curl -X POST http://localhost:8080/api/v1/tracker/activities \
 
 # 5. Check wallet balance
 curl -X GET http://localhost:8080/api/v1/wallet/balance \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  -H "Authorization: Bearer <your-jwt-token-here>"
 ```
 
 ### **3. Load Testing**
@@ -284,5 +284,5 @@ The system is working correctly when:
 
 **🌱 GreenLedger is now fully functional and ready for production use!**
 
-For support: [support@greenledger.com](mailto:support@greenledger.com)
+For support: [truonglevinhphuc2006@gmail.com](mailto:truonglevinhphuc2006@gmail.com)
 For issues: [GitHub Issues](https://github.com/sloweyyy/GreenLedger/issues)

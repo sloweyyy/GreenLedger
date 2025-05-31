@@ -25,13 +25,14 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: greenledger-service-account
-      securityContext:
+      automountServiceAccountToken: false      securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 2000
-      containers:
+        runAsUser: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault      containers:
       - name: user-auth
-        image: ghcr.io/sloweyyy/greenledger/user-auth:latest
+        image: ghcr.io/sloweyyy/greenledger/user-auth:v1.0.0
         imagePullPolicy: Always
         ports:
         - name: http
@@ -145,7 +146,7 @@ spec:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
-          runAsUser: 1000
+          runAsUser: 65534
           capabilities:
             drop:
             - ALL

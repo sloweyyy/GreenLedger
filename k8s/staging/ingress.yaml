@@ -12,36 +12,34 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    
+
     # Rate limiting
     nginx.ingress.kubernetes.io/rate-limit: "100"
     nginx.ingress.kubernetes.io/rate-limit-window: "1m"
-    
+
     # CORS
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "https://staging.greenledger.app,http://localhost:3000"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET,POST,PUT,DELETE,OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization,X-Requested-With"
-    
-    # Security headers
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      add_header X-Frame-Options "SAMEORIGIN" always;
-      add_header X-Content-Type-Options "nosniff" always;
-      add_header X-XSS-Protection "1; mode=block" always;
-      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self';" always;
-    
+
+    # Security headers (using safer annotations instead of configuration-snippet)
+    nginx.ingress.kubernetes.io/custom-http-errors: "404,503"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+
     # Load balancing
     nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
-    
+
     # Timeouts
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
-    
+
     # Body size
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    
+
     # SSL/TLS
     cert-manager.io/cluster-issuer: "letsencrypt-staging"
 spec:
@@ -61,7 +59,7 @@ spec:
             name: calculator-service
             port:
               number: 8081
-      
+
       # Tracker Service
       - path: /api/v1/tracker(/|$)(.*)
         pathType: Prefix
@@ -70,7 +68,7 @@ spec:
             name: tracker-service
             port:
               number: 8082
-      
+
       # Wallet Service
       - path: /api/v1/wallet(/|$)(.*)
         pathType: Prefix
@@ -79,7 +77,7 @@ spec:
             name: wallet-service
             port:
               number: 8083
-      
+
       # User Auth Service
       - path: /api/v1/auth(/|$)(.*)
         pathType: Prefix
@@ -88,7 +86,7 @@ spec:
             name: user-auth-service
             port:
               number: 8084
-      
+
       # Reporting Service
       - path: /api/v1/reports(/|$)(.*)
         pathType: Prefix
@@ -97,7 +95,7 @@ spec:
             name: reporting-service
             port:
               number: 8085
-      
+
       # Health check endpoint (load balancer)
       - path: /health
         pathType: Exact
@@ -106,7 +104,7 @@ spec:
             name: user-auth-service
             port:
               number: 8084
-      
+
       # Metrics endpoint (for monitoring)
       - path: /metrics
         pathType: Exact

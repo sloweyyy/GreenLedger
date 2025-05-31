@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -27,7 +27,7 @@ RUN cd services/certifier && \
     ./cmd/main.go
 
 # Final stage
-FROM alpine:3.18
+FROM alpine:3.19
 
 # Install runtime dependencies
 RUN apk --no-cache add ca-certificates wget
