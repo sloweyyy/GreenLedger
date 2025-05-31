@@ -311,5 +311,5 @@ make docker-logs
 
 ---
 
-**Last Updated**: January 2025
-**Maintained by**: GreenLedger Team
+**Last Updated**: May 2025
+**Maintained by**: Truong Le Vinh Phuc

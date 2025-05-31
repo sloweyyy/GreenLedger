@@ -1,8 +1,8 @@
-# GreenLedger Deployment Guide
+# 🚀 GreenLedger Deployment Guide
 
 ## Prerequisites
 
-### Local Development
+### Local Development Setup
 - Go 1.21+
 - Docker & Docker Compose
 - PostgreSQL client (for manual DB operations)
@@ -18,8 +18,8 @@
 
 ### 1. Clone and Setup
 ```bash
-git clone <repository-url>
-cd greenledger
+git clone https://github.com/sloweyyy/GreenLedger.git
+cd GreenLedger
 
 # Install Go dependencies
 go mod download
