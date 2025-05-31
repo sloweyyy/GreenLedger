@@ -14,15 +14,15 @@ import (
 
 // CalculatorService handles carbon footprint calculations
 type CalculatorService struct {
-	calculationRepo    *repository.CalculationRepository
-	emissionFactorRepo *repository.EmissionFactorRepository
+	calculationRepo    repository.CalculationRepositoryInterface
+	emissionFactorRepo repository.EmissionFactorRepositoryInterface
 	logger             *logger.Logger
 }
 
 // NewCalculatorService creates a new calculator service
 func NewCalculatorService(
-	calculationRepo *repository.CalculationRepository,
-	emissionFactorRepo *repository.EmissionFactorRepository,
+	calculationRepo repository.CalculationRepositoryInterface,
+	emissionFactorRepo repository.EmissionFactorRepositoryInterface,
 	logger *logger.Logger,
 ) *CalculatorService {
 	return &CalculatorService{

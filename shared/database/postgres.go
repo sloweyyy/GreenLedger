@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	_ "github.com/lib/pq"
 	"github.com/sloweyyy/GreenLedger/shared/config"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"

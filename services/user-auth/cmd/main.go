@@ -17,7 +17,7 @@ import (
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/service"
 	"github.com/sloweyyy/GreenLedger/shared/config"
 	"github.com/sloweyyy/GreenLedger/shared/database"
-	"github.com/sloweyyy/GreenLedger/shared/logger"
+	sharedLogger "github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/sloweyyy/GreenLedger/shared/middleware"
 )
 
@@ -54,7 +54,7 @@ func main() {
 	cfg.Server.GRPCPort = 9084
 
 	// Initialize logger
-	logger := logger.New(cfg.Server.LogLevel).WithService("user-auth")
+	logger := sharedLogger.New(cfg.Server.LogLevel).WithService("user-auth")
 
 	// Initialize database
 	db, err := database.NewPostgresDB(&cfg.Database, logger)
@@ -136,8 +136,8 @@ func main() {
 	// Start server in a goroutine
 	go func() {
 		logger.LogInfo(context.Background(), "starting user-auth service",
-			logger.Int("port", cfg.Server.Port),
-			logger.String("environment", cfg.Server.Environment))
+			sharedLogger.Int("port", cfg.Server.Port),
+			sharedLogger.String("environment", cfg.Server.Environment))
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.LogError(context.Background(), "failed to start server", err)
@@ -172,7 +172,7 @@ func main() {
 }
 
 // initializeRolesAndPermissions initializes default roles and permissions
-func initializeRolesAndPermissions(ctx context.Context, roleRepo *repository.RoleRepository, permissionRepo *repository.PermissionRepository, logger *logger.Logger) error {
+func initializeRolesAndPermissions(ctx context.Context, roleRepo *repository.RoleRepository, permissionRepo *repository.PermissionRepository, logger *sharedLogger.Logger) error {
 	// Check if roles already exist
 	roles, err := roleRepo.List(ctx)
 	if err != nil {
@@ -249,7 +249,7 @@ func initializeRolesAndPermissions(ctx context.Context, roleRepo *repository.Rol
 	for _, permission := range defaultPermissions {
 		if err := roleRepo.AssignPermission(ctx, adminRole.ID, permission.ID); err != nil {
 			logger.LogError(ctx, "failed to assign permission to admin role", err,
-				logger.String("permission", permission.Name))
+				sharedLogger.String("permission", permission.Name))
 		}
 	}
 
@@ -267,7 +267,7 @@ func initializeRolesAndPermissions(ctx context.Context, roleRepo *repository.Rol
 			if permission.Name == permName {
 				if err := roleRepo.AssignPermission(ctx, userRole.ID, permission.ID); err != nil {
 					logger.LogError(ctx, "failed to assign permission to user role", err,
-						logger.String("permission", permission.Name))
+						sharedLogger.String("permission", permission.Name))
 				}
 				break
 			}
@@ -275,8 +275,8 @@ func initializeRolesAndPermissions(ctx context.Context, roleRepo *repository.Rol
 	}
 
 	logger.LogInfo(ctx, "default roles and permissions initialized successfully",
-		logger.Int("permissions_count", len(defaultPermissions)),
-		logger.Int("roles_count", 3))
+		sharedLogger.Int("permissions_count", len(defaultPermissions)),
+		sharedLogger.Int("roles_count", 3))
 
 	return nil
 }

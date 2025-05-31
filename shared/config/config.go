@@ -26,11 +26,11 @@ type RedisConfig struct {
 
 // ServerConfig holds server configuration
 type ServerConfig struct {
-	Port         int
-	GRPCPort     int
-	Environment  string
-	JWTSecret    string
-	LogLevel     string
+	Port        int
+	GRPCPort    int
+	Environment string
+	JWTSecret   string
+	LogLevel    string
 }
 
 // KafkaConfig holds Kafka configuration

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL databases (one per service)
   postgres-calculator:
@@ -66,6 +64,40 @@ services:
       - postgres_userauth_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d userauth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-reporting:
+    image: postgres:15-alpine
+    container_name: greenledger-postgres-reporting
+    environment:
+      POSTGRES_DB: reporting_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_reporting_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reporting_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-certifier:
+    image: postgres:15-alpine
+    container_name: greenledger-postgres-certifier
+    environment:
+      POSTGRES_DB: certifier_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_certifier_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d certifier_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -248,6 +280,81 @@ services:
       timeout: 10s
       retries: 3
 
+  # Reporting Service
+  reporting-service:
+    build:
+      context: .
+      dockerfile: services/reporting/Dockerfile
+    container_name: greenledger-reporting
+    ports:
+      - "8085:8085"
+      - "9085:9085"
+    environment:
+      DB_HOST: postgres-reporting
+      DB_PORT: 5432
+      DB_NAME: reporting_db
+      DB_USER: postgres
+      DB_PASSWORD: password
+      CALCULATOR_DB_HOST: postgres-calculator
+      TRACKER_DB_HOST: postgres-tracker
+      WALLET_DB_HOST: postgres-wallet
+      SERVER_PORT: 8085
+      GRPC_PORT: 9085
+      JWT_SECRET: your-secret-key
+      LOG_LEVEL: info
+      ENVIRONMENT: development
+    depends_on:
+      postgres-reporting:
+        condition: service_healthy
+      postgres-calculator:
+        condition: service_healthy
+      postgres-tracker:
+        condition: service_healthy
+      postgres-wallet:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.reporting.rule=PathPrefix(`/api/v1/reporting`)"
+      - "traefik.http.services.reporting.loadbalancer.server.port=8085"
+
+  # Certificate Service
+  certifier-service:
+    build:
+      context: .
+      dockerfile: services/certifier/Dockerfile
+    container_name: greenledger-certifier
+    ports:
+      - "8086:8086"
+      - "9086:9086"
+    environment:
+      DB_HOST: postgres-certifier
+      DB_PORT: 5432
+      DB_NAME: certifier_db
+      DB_USER: postgres
+      DB_PASSWORD: password
+      SERVER_PORT: 8086
+      GRPC_PORT: 9086
+      JWT_SECRET: your-secret-key
+      LOG_LEVEL: info
+      ENVIRONMENT: development
+    depends_on:
+      postgres-certifier:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.certifier.rule=PathPrefix(`/api/v1/certificates`)"
+      - "traefik.http.services.certifier.loadbalancer.server.port=8086"
+
   # API Gateway (Traefik)
   traefik:
     image: traefik:v3.0
@@ -303,6 +410,8 @@ volumes:
   postgres_tracker_data:
   postgres_wallet_data:
   postgres_userauth_data:
+  postgres_reporting_data:
+  postgres_certifier_data:
   redis_data:
   zookeeper_data:
   kafka_data:

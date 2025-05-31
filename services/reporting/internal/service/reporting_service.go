@@ -10,7 +10,6 @@ import (
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"github.com/shopspring/decimal"
 )
 
 // ReportingService handles report generation and management

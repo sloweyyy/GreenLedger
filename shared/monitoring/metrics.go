@@ -13,30 +13,30 @@ import (
 // Metrics holds all Prometheus metrics
 type Metrics struct {
 	// HTTP metrics
-	HTTPRequestsTotal     *prometheus.CounterVec
-	HTTPRequestDuration   *prometheus.HistogramVec
-	HTTPRequestsInFlight  prometheus.Gauge
-	HTTPResponseSize      *prometheus.HistogramVec
+	HTTPRequestsTotal    *prometheus.CounterVec
+	HTTPRequestDuration  *prometheus.HistogramVec
+	HTTPRequestsInFlight prometheus.Gauge
+	HTTPResponseSize     *prometheus.HistogramVec
 
 	// Database metrics
-	DBConnectionsOpen     prometheus.Gauge
-	DBConnectionsIdle     prometheus.Gauge
-	DBQueryDuration       *prometheus.HistogramVec
-	DBQueriesTotal        *prometheus.CounterVec
+	DBConnectionsOpen prometheus.Gauge
+	DBConnectionsIdle prometheus.Gauge
+	DBQueryDuration   *prometheus.HistogramVec
+	DBQueriesTotal    *prometheus.CounterVec
 
 	// Business metrics
-	CalculationsTotal     *prometheus.CounterVec
-	ActivitiesTotal       *prometheus.CounterVec
-	CreditsEarned         *prometheus.CounterVec
-	CreditsSpent          *prometheus.CounterVec
-	TransactionsTotal     *prometheus.CounterVec
-	CertificatesIssued    *prometheus.CounterVec
-	ReportsGenerated      *prometheus.CounterVec
+	CalculationsTotal  *prometheus.CounterVec
+	ActivitiesTotal    *prometheus.CounterVec
+	CreditsEarned      *prometheus.CounterVec
+	CreditsSpent       *prometheus.CounterVec
+	TransactionsTotal  *prometheus.CounterVec
+	CertificatesIssued *prometheus.CounterVec
+	ReportsGenerated   *prometheus.CounterVec
 
 	// System metrics
-	GoroutinesActive      prometheus.Gauge
-	MemoryUsage           prometheus.Gauge
-	CPUUsage              prometheus.Gauge
+	GoroutinesActive prometheus.Gauge
+	MemoryUsage      prometheus.Gauge
+	CPUUsage         prometheus.Gauge
 }
 
 // NewMetrics creates a new metrics instance
@@ -193,7 +193,7 @@ func (m *Metrics) PrometheusMiddleware(serviceName string) gin.HandlerFunc {
 		// Record metrics
 		duration := time.Since(start).Seconds()
 		statusCode := strconv.Itoa(c.Writer.Status())
-		
+
 		labels := prometheus.Labels{
 			"service":     serviceName,
 			"method":      c.Request.Method,

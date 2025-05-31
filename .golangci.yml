@@ -1,0 +1,344 @@
+# GolangCI-Lint configuration for GreenLedger
+# Documentation: https://golangci-lint.run/usage/configuration/
+
+run:
+  # Timeout for analysis
+  timeout: 5m
+  
+  # Exit code when at least one issue was found
+  issues-exit-code: 1
+  
+  # Include test files or not
+  tests: true
+  
+  # List of build tags, all linters use it
+  build-tags:
+    - integration
+    - e2e
+  
+  # Which dirs to skip: issues from them won't be reported
+  skip-dirs:
+    - vendor
+    - testdata
+    - tmp
+    - bin
+    - dist
+    - node_modules
+  
+  # Which files to skip: they will be analyzed, but issues from them won't be reported
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_mock\\.go$"
+    - "wire_gen\\.go$"
+
+# Output configuration options
+output:
+  # Colored output
+  format: colored-line-number
+  
+  # Print lines of code with issue
+  print-issued-lines: true
+  
+  # Print linter name in the end of issue text
+  print-linter-name: true
+  
+  # Make issues output unique by line
+  uniq-by-line: true
+  
+  # Add a prefix to the output file references
+  path-prefix: ""
+  
+  # Sort results by: filepath, line and column
+  sort-results: true
+
+# All available settings of specific linters
+linters-settings:
+  # Errcheck settings
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`
+    check-type-assertions: true
+    
+    # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`
+    check-blank: false
+    
+    # List of functions to exclude from checking
+    exclude-functions:
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+
+  # Govet settings
+  govet:
+    # Report about shadowed variables
+    check-shadowing: true
+    
+    # Settings per analyzer
+    settings:
+      printf:
+        # Comma-separated list of print function names to check
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+
+  # Gocyclo settings
+  gocyclo:
+    # Minimal code complexity to report
+    min-complexity: 15
+
+  # Gofmt settings
+  gofmt:
+    # Simplify code: gofmt with `-s` option
+    simplify: true
+
+  # Goimports settings
+  goimports:
+    # Put imports beginning with prefix after 3rd-party packages
+    local-prefixes: github.com/sloweyyy/GreenLedger
+
+  # Golint settings
+  golint:
+    # Minimal confidence for issues
+    min-confidence: 0.8
+
+  # Goconst settings
+  goconst:
+    # Minimal length of string constant
+    min-len: 3
+    # Minimum occurrences of constant string count to trigger issue
+    min-occurrences: 3
+    # Ignore test files
+    ignore-tests: false
+    # Look for existing constants matching the values
+    match-constant: true
+    # Search also for duplicated numbers
+    numbers: false
+    # Minimum value, only works with goconst.numbers
+    min: 3
+    # Maximum value, only works with goconst.numbers
+    max: 3
+    # Ignore when constant is not used as function argument
+    ignore-calls: true
+
+  # Misspell settings
+  misspell:
+    # Correct spellings using locale preferences for US or UK
+    locale: US
+    ignore-words:
+      - someword
+
+  # Lll settings
+  lll:
+    # Max line length, lines longer will be reported
+    line-length: 120
+
+  # Unused settings
+  unused:
+    # Mark all struct fields that have been written to as used
+    field-writes-are-uses: true
+    # Mark all exported identifiers as used
+    exported-fields-are-used: true
+    # Mark all exported identifiers as used
+    exported-variables-are-used: true
+    # Mark all function parameters as used
+    parameters-are-used: true
+    # Mark all local variables as used
+    local-variables-are-used: true
+    # Mark all generated files as used
+    generated-is-used: true
+
+  # Unparam settings
+  unparam:
+    # Inspect exported functions
+    check-exported: false
+
+  # Nakedret settings
+  nakedret:
+    # Make an issue if func has more lines of code than this setting
+    max-func-lines: 30
+
+  # Prealloc settings
+  prealloc:
+    # Report preallocation suggestions only on simple loops that have no returns/breaks/continues/gotos in them
+    simple: true
+    range-loops: true # Report preallocation suggestions on range loops
+    for-loops: false # Report preallocation suggestions on for loops
+
+  # Gocritic settings
+  gocritic:
+    # Which checks should be enabled; can't be combined with 'disabled-checks'
+    enabled-checks:
+      - argOrder
+      - badCond
+      - caseOrder
+      - codegenComment
+      - commentedOutCode
+      - deprecatedComment
+      - dupArg
+      - dupBranch
+      - dupCase
+      - dupSubExpr
+      - exitAfterDefer
+      - flagDeref
+      - flagName
+      - nilValReturn
+      - offBy1
+      - regexpMust
+      - sloppyLen
+      - switchTrue
+      - typeSwitchVar
+      - underef
+      - unlambda
+      - unslice
+      - valSwap
+      - wrapperFunc
+
+  # Godox settings
+  godox:
+    # Report any comments starting with keywords
+    keywords:
+      - NOTE
+      - OPTIMIZE
+      - HACK
+      - TODO
+      - BUG
+      - FIXME
+
+  # Dogsled settings
+  dogsled:
+    # Checks assignments with too many blank identifiers
+    max-blank-identifiers: 2
+
+  # Whitespace settings
+  whitespace:
+    multi-if: false   # Enforces newlines (or comments) after every multi-line if statement
+    multi-func: false # Enforces newlines (or comments) after every multi-line function signature
+
+linters:
+  # Disable all linters as default is true
+  disable-all: true
+  
+  # Enable specific linters
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - golint
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - scopelint
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+
+  # Don't enable these linters
+  disable:
+    - asciicheck
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - gocyclo
+    - godot
+    - godox
+    - goerr113
+    - maligned
+    - nestif
+    - prealloc
+    - testpackage
+    - wsl
+
+issues:
+  # List of regexps of issue texts to exclude
+  exclude:
+    # Exclude some linters from running on tests files
+    - "G404: Use of weak random number generator"
+    - "G204: Subprocess launched with variable"
+    
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gomnd
+        - goconst
+        - dupl
+        - lll
+        - gosec
+    
+    # Exclude known linters from partially hard-to-fix issues
+    - linters:
+        - gosec
+      text: "G204: Subprocess launched with variable"
+    
+    - linters:
+        - lll
+      source: "^//go:generate "
+
+  # Independently of option `exclude` we use default exclude patterns
+  exclude-use-default: false
+  
+  # If set to true exclude and exclude-rules regular expressions become case sensitive
+  exclude-case-sensitive: false
+  
+  # The list of ids of default excludes to include or disable
+  include:
+    - EXC0002 # disable excluding of issues about comments from golint
+  
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 3
+  
+  # Show only new issues: if there are unstaged changes or untracked files, only those changes are analyzed
+  new: false
+  
+  # Show only new issues created after git revision `REV`
+  new-from-rev: ""
+  
+  # Show only new issues created in git patch with set file path
+  new-from-patch: ""
+  
+  # Fix found issues (if it's supported by the linter)
+  fix: false
+
+severity:
+  # Default value is empty string
+  default-severity: error
+  
+  # If set to true severity-rules regular expressions become case sensitive
+  case-sensitive: false
+  
+  # Default value is empty list
+  rules:
+    - linters:
+        - dupl
+      severity: info

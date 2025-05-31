@@ -5,10 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
-	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // MockCalculationRepository is a mock implementation of CalculationRepository
@@ -21,7 +23,7 @@ func (m *MockCalculationRepository) Create(ctx context.Context, calculation *mod
 	return args.Error(0)
 }
 
-func (m *MockCalculationRepository) GetByID(ctx context.Context, id string) (*models.Calculation, error) {
+func (m *MockCalculationRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Calculation, error) {
 	args := m.Called(ctx, id)
 	return args.Get(0).(*models.Calculation), args.Error(1)
 }
@@ -34,6 +36,21 @@ func (m *MockCalculationRepository) GetByUserID(ctx context.Context, userID stri
 func (m *MockCalculationRepository) GetByUserIDAndDateRange(ctx context.Context, userID string, startDate, endDate time.Time, limit, offset int) ([]*models.Calculation, int64, error) {
 	args := m.Called(ctx, userID, startDate, endDate, limit, offset)
 	return args.Get(0).([]*models.Calculation), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockCalculationRepository) Update(ctx context.Context, calculation *models.Calculation) error {
+	args := m.Called(ctx, calculation)
+	return args.Error(0)
+}
+
+func (m *MockCalculationRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockCalculationRepository) GetUserStats(ctx context.Context, userID string, startDate, endDate time.Time) (*repository.UserCalculationStats, error) {
+	args := m.Called(ctx, userID, startDate, endDate)
+	return args.Get(0).(*repository.UserCalculationStats), args.Error(1)
 }
 
 // MockEmissionFactorRepository is a mock implementation of EmissionFactorRepository
@@ -54,6 +71,31 @@ func (m *MockEmissionFactorRepository) GetByActivityTypeAndSubType(ctx context.C
 func (m *MockEmissionFactorRepository) GetByActivityTypeAndLocation(ctx context.Context, activityType, location string) ([]*models.EmissionFactor, error) {
 	args := m.Called(ctx, activityType, location)
 	return args.Get(0).([]*models.EmissionFactor), args.Error(1)
+}
+
+func (m *MockEmissionFactorRepository) Create(ctx context.Context, factor *models.EmissionFactor) error {
+	args := m.Called(ctx, factor)
+	return args.Error(0)
+}
+
+func (m *MockEmissionFactorRepository) Update(ctx context.Context, factor *models.EmissionFactor) error {
+	args := m.Called(ctx, factor)
+	return args.Error(0)
+}
+
+func (m *MockEmissionFactorRepository) Delete(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockEmissionFactorRepository) BulkCreate(ctx context.Context, factors []*models.EmissionFactor) error {
+	args := m.Called(ctx, factors)
+	return args.Error(0)
+}
+
+func (m *MockEmissionFactorRepository) GetAll(ctx context.Context, activityType, location string, limit, offset int) ([]*models.EmissionFactor, int64, error) {
+	args := m.Called(ctx, activityType, location, limit, offset)
+	return args.Get(0).([]*models.EmissionFactor), args.Get(1).(int64), args.Error(2)
 }
 
 func TestCalculatorService_CalculateVehicleTravel(t *testing.T) {

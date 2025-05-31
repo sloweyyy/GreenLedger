@@ -10,7 +10,7 @@ import (
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		
+
 		// Allow specific origins or all origins in development
 		allowedOrigins := []string{
 			"http://localhost:3000",
