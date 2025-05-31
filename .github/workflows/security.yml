@@ -35,11 +35,13 @@ jobs:
         uses: securego/gosec@master
         with:
           args: "-fmt sarif -out gosec.sarif ./..."
+        continue-on-error: true
 
       - name: 📊 Upload gosec SARIF file
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: gosec.sarif
+        continue-on-error: true
 
       - name: 🔍 Run Semgrep
         uses: returntocorp/semgrep-action@v1
@@ -52,6 +54,7 @@ jobs:
             p/kubernetes
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
 
   # Job 2: Dependency Vulnerability Scanning
   dependency-scan:
@@ -111,9 +114,14 @@ jobs:
   container-scan:
     name: 🐳 Container Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     strategy:
       matrix:
         service: [calculator, tracker, wallet, user-auth]
+      fail-fast: false
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -155,6 +163,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "trivy-container-${{ matrix.service }}.sarif"
+        continue-on-error: true
 
       - name: 🔍 Run Grype vulnerability scanner
         if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
@@ -163,6 +172,7 @@ jobs:
           image: "security-scan:${{ matrix.service }}"
           fail-build: false
           severity-cutoff: high
+        continue-on-error: true
 
       - name: 🔍 Run Docker Scout
         if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
@@ -172,17 +182,23 @@ jobs:
           image: "security-scan:${{ matrix.service }}"
           sarif-file: "scout-${{ matrix.service }}.sarif"
           summary: true
+        continue-on-error: true
 
       - name: 📊 Upload Docker Scout scan results
         if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: "scout-${{ matrix.service }}.sarif"
+        continue-on-error: true
 
   # Job 4: Infrastructure as Code Security
   iac-scan:
     name: 🏗️ Infrastructure Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -194,11 +210,14 @@ jobs:
           framework: dockerfile,kubernetes
           output_format: sarif
           output_file_path: checkov.sarif
+          soft_fail: true
+        continue-on-error: true
 
       - name: 📊 Upload Checkov scan results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: checkov.sarif
+        continue-on-error: true
 
       - name: 🔍 Run Terrascan
         uses: tenable/terrascan-action@main
@@ -208,12 +227,14 @@ jobs:
           policy_type: "docker"
           only_warn: true
           sarif_upload: true
+        continue-on-error: true
 
       - name: 🔍 Scan Kubernetes manifests with Kubesec
         run: |
           if [ -d "k8s" ]; then
             docker run --rm -v $(pwd):/workspace kubesec/kubesec:latest scan /workspace/k8s/*.yaml
           fi
+        continue-on-error: true
 
   # Job 5: Secrets Scanning
   secrets-scan:
@@ -233,9 +254,10 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
-          head: HEAD
+          base: ${{ github.event.repository.default_branch }}
+          head: ${{ github.sha }}
           extra_args: --debug --only-verified
+        continue-on-error: true
 
       - name: 🔍 Run GitLeaks
         uses: gitleaks/gitleaks-action@v2

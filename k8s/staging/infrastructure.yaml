@@ -1,3 +1,47 @@
+# Service Account for PostgreSQL
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres-service-account
+  namespace: greenledger-staging
+  labels:
+    app: postgres
+    environment: staging
+automountServiceAccountToken: false
+---
+# Service Account for Redis
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis-service-account
+  namespace: greenledger-staging
+  labels:
+    app: redis
+    environment: staging
+automountServiceAccountToken: false
+---
+# Service Account for Kafka
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-service-account
+  namespace: greenledger-staging
+  labels:
+    app: kafka
+    environment: staging
+automountServiceAccountToken: false
+---
+# Service Account for Zookeeper
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: zookeeper-service-account
+  namespace: greenledger-staging
+  labels:
+    app: zookeeper
+    environment: staging
+automountServiceAccountToken: false
+---
 # PostgreSQL for Calculator Service
 apiVersion: apps/v1
 kind: StatefulSet
@@ -21,15 +65,32 @@ spec:
         app: postgres
         service: calculator
         environment: staging
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
+      serviceAccountName: postgres-service-account
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: postgres:15.8-alpine
         env:
         - name: POSTGRES_DB
-          value: "calculator_staging"
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: calculator-db-name
         - name: POSTGRES_USER
-          value: "calculator_user"
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: calculator-db-user
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -39,9 +100,24 @@ spec:
           value: /var/lib/postgresql/data/pgdata
         ports:
         - containerPort: 5432
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 70
+          runAsGroup: 70
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: var-run-volume
+          mountPath: /var/run/postgresql
         resources:
           requests:
             memory: "256Mi"
@@ -49,6 +125,33 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: var-run-volume
+        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: postgres-storage
@@ -74,6 +177,116 @@ spec:
   selector:
     app: postgres
     service: calculator
+---
+# Redis for Caching
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-staging
+  namespace: greenledger-staging
+  labels:
+    app: redis
+    environment: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        environment: staging
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
+    spec:
+      serviceAccountName: redis-service-account
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        command:
+        - redis-server
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: external-secrets
+              key: redis-password
+        ports:
+        - containerPort: 6379
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 999
+          runAsGroup: 999
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: tmp-volume
+          mountPath: /tmp
+        livenessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-staging
+  namespace: greenledger-staging
+  labels:
+    app: redis
+    environment: staging
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
 ---
 # PostgreSQL for Tracker Service
 apiVersion: apps/v1
@@ -98,15 +311,32 @@ spec:
         app: postgres
         service: tracker
         environment: staging
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
+      serviceAccountName: postgres-service-account
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: postgres:15.8-alpine
         env:
         - name: POSTGRES_DB
-          value: "tracker_staging"
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: tracker-db-name
         - name: POSTGRES_USER
-          value: "tracker_user"
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: tracker-db-user
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -116,9 +346,24 @@ spec:
           value: /var/lib/postgresql/data/pgdata
         ports:
         - containerPort: 5432
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 70
+          runAsGroup: 70
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: var-run-volume
+          mountPath: /var/run/postgresql
         resources:
           requests:
             memory: "256Mi"
@@ -126,6 +371,33 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: var-run-volume
+        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: postgres-storage
@@ -152,70 +424,6 @@ spec:
     app: postgres
     service: tracker
 ---
-# Redis for Caching
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: redis-staging
-  namespace: greenledger-staging
-  labels:
-    app: redis
-    environment: staging
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: redis
-  template:
-    metadata:
-      labels:
-        app: redis
-        environment: staging
-    spec:
-      containers:
-      - name: redis
-        image: redis:7-alpine
-        command:
-        - redis-server
-        - --requirepass
-        - $(REDIS_PASSWORD)
-        env:
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: external-secrets
-              key: redis-password
-        ports:
-        - containerPort: 6379
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
-        volumeMounts:
-        - name: redis-data
-          mountPath: /data
-      volumes:
-      - name: redis-data
-        emptyDir: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-staging
-  namespace: greenledger-staging
-  labels:
-    app: redis
-    environment: staging
-spec:
-  ports:
-  - port: 6379
-    targetPort: 6379
-  selector:
-    app: redis
----
 # PostgreSQL for Wallet Service
 apiVersion: apps/v1
 kind: StatefulSet
@@ -239,15 +447,32 @@ spec:
         app: postgres
         service: wallet
         environment: staging
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
+      serviceAccountName: postgres-service-account
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: postgres:15.8-alpine
         env:
         - name: POSTGRES_DB
-          value: "wallet_staging"
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: wallet-db-name
         - name: POSTGRES_USER
-          value: "wallet_user"
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: wallet-db-user
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -257,9 +482,24 @@ spec:
           value: /var/lib/postgresql/data/pgdata
         ports:
         - containerPort: 5432
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 70
+          runAsGroup: 70
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: var-run-volume
+          mountPath: /var/run/postgresql
         resources:
           requests:
             memory: "256Mi"
@@ -267,6 +507,33 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: var-run-volume
+        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: postgres-storage
@@ -292,302 +559,3 @@ spec:
   selector:
     app: postgres
     service: wallet
----
-# PostgreSQL for User Auth Service
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: userauth-postgres-staging
-  namespace: greenledger-staging
-  labels:
-    app: postgres
-    service: userauth
-    environment: staging
-spec:
-  serviceName: userauth-postgres-staging
-  replicas: 1
-  selector:
-    matchLabels:
-      app: postgres
-      service: userauth
-  template:
-    metadata:
-      labels:
-        app: postgres
-        service: userauth
-        environment: staging
-    spec:
-      containers:
-      - name: postgres
-        image: postgres:15-alpine
-        env:
-        - name: POSTGRES_DB
-          value: "userauth_staging"
-        - name: POSTGRES_USER
-          value: "userauth_user"
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: db-secrets
-              key: userauth-db-password
-        - name: PGDATA
-          value: /var/lib/postgresql/data/pgdata
-        ports:
-        - containerPort: 5432
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-  volumeClaimTemplates:
-  - metadata:
-      name: postgres-storage
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: userauth-postgres-staging
-  namespace: greenledger-staging
-  labels:
-    app: postgres
-    service: userauth
-    environment: staging
-spec:
-  ports:
-  - port: 5432
-    targetPort: 5432
-  selector:
-    app: postgres
-    service: userauth
----
-# PostgreSQL for Reporting Service
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: reporting-postgres-staging
-  namespace: greenledger-staging
-  labels:
-    app: postgres
-    service: reporting
-    environment: staging
-spec:
-  serviceName: reporting-postgres-staging
-  replicas: 1
-  selector:
-    matchLabels:
-      app: postgres
-      service: reporting
-  template:
-    metadata:
-      labels:
-        app: postgres
-        service: reporting
-        environment: staging
-    spec:
-      containers:
-      - name: postgres
-        image: postgres:15-alpine
-        env:
-        - name: POSTGRES_DB
-          value: "reporting_staging"
-        - name: POSTGRES_USER
-          value: "reporting_user"
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: db-secrets
-              key: reporting-db-password
-        - name: PGDATA
-          value: /var/lib/postgresql/data/pgdata
-        ports:
-        - containerPort: 5432
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-  volumeClaimTemplates:
-  - metadata:
-      name: postgres-storage
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: reporting-postgres-staging
-  namespace: greenledger-staging
-  labels:
-    app: postgres
-    service: reporting
-    environment: staging
-spec:
-  ports:
-  - port: 5432
-    targetPort: 5432
-  selector:
-    app: postgres
-    service: reporting
----
-# Kafka for Messaging
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: kafka-staging
-  namespace: greenledger-staging
-  labels:
-    app: kafka
-    environment: staging
-spec:
-  serviceName: kafka-staging
-  replicas: 1
-  selector:
-    matchLabels:
-      app: kafka
-  template:
-    metadata:
-      labels:
-        app: kafka
-        environment: staging
-    spec:
-      containers:
-      - name: kafka
-        image: confluentinc/cp-kafka:7.4.0
-        env:
-        - name: KAFKA_BROKER_ID
-          value: "1"
-        - name: KAFKA_ZOOKEEPER_CONNECT
-          value: "zookeeper-staging:2181"
-        - name: KAFKA_ADVERTISED_LISTENERS
-          value: "PLAINTEXT://kafka-staging:9092"
-        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-          value: "1"
-        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
-          value: "true"
-        ports:
-        - containerPort: 9092
-        volumeMounts:
-        - name: kafka-data
-          mountPath: /var/lib/kafka/data
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "200m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-  volumeClaimTemplates:
-  - metadata:
-      name: kafka-data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kafka-staging
-  namespace: greenledger-staging
-  labels:
-    app: kafka
-    environment: staging
-spec:
-  ports:
-  - port: 9092
-    targetPort: 9092
-  selector:
-    app: kafka
----
-# Zookeeper for Kafka
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: zookeeper-staging
-  namespace: greenledger-staging
-  labels:
-    app: zookeeper
-    environment: staging
-spec:
-  serviceName: zookeeper-staging
-  replicas: 1
-  selector:
-    matchLabels:
-      app: zookeeper
-  template:
-    metadata:
-      labels:
-        app: zookeeper
-        environment: staging
-    spec:
-      containers:
-      - name: zookeeper
-        image: confluentinc/cp-zookeeper:7.4.0
-        env:
-        - name: ZOOKEEPER_CLIENT_PORT
-          value: "2181"
-        - name: ZOOKEEPER_TICK_TIME
-          value: "2000"
-        ports:
-        - containerPort: 2181
-        volumeMounts:
-        - name: zookeeper-data
-          mountPath: /var/lib/zookeeper/data
-        - name: zookeeper-logs
-          mountPath: /var/lib/zookeeper/log
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "200m"
-  volumeClaimTemplates:
-  - metadata:
-      name: zookeeper-data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 5Gi
-  - metadata:
-      name: zookeeper-logs
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 5Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: zookeeper-staging
-  namespace: greenledger-staging
-  labels:
-    app: zookeeper
-    environment: staging
-spec:
-  ports:
-  - port: 2181
-    targetPort: 2181
-  selector:
-    app: zookeeper
