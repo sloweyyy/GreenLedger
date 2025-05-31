@@ -41,6 +41,7 @@ make build       # Build services
 **Error**: `go.sum: no such file or directory` or `missing go.sum entry`
 
 **Solution**:
+
 ```bash
 # Automatic fix
 make deps
@@ -57,6 +58,7 @@ cd ../..
 **Error**: `Unable to resolve action securecodewarrior/github-action-gosec@master`
 
 **Solution**: ✅ **Already Fixed** - The workflow now installs gosec directly:
+
 ```yaml
 - name: 🔒 Run gosec security scanner
   run: |
@@ -69,6 +71,7 @@ cd ../..
 **Error**: `Dockerfile not found` or `failed to solve`
 
 **Solution**: ✅ **Already Fixed** - The workflow now checks for Dockerfile existence:
+
 ```yaml
 - name: 🔍 Check if Dockerfile exists
   id: dockerfile-check
@@ -85,6 +88,7 @@ cd ../..
 **Error**: Tests failing due to missing dependencies or setup issues
 
 **Solution**:
+
 ```bash
 # Fix dependencies first
 make deps
@@ -167,16 +171,19 @@ make build
 ### Creating a Pull Request
 
 1. **Create feature branch**:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Make changes and test locally**:
+
    ```bash
    make ci-local  # Run full CI pipeline locally
    ```
 
 3. **Commit and push**:
+
    ```bash
    git add .
    git commit -m "feat: your feature description"
@@ -188,6 +195,7 @@ make build
 ### After PR Creation
 
 The CI pipeline will automatically:
+
 - ✅ Run code quality checks
 - ✅ Execute all tests
 - ✅ Build Docker images
@@ -224,6 +232,7 @@ SEMGREP_APP_TOKEN=your-semgrep-token
 ### Workflow Health
 
 The system automatically monitors:
+
 - ✅ Workflow success rates
 - ✅ Performance metrics
 - ✅ Security scan results

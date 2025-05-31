@@ -28,6 +28,7 @@ test: ## Run all tests
 	@cd services/wallet && go test ./...
 	@cd services/user-auth && go test ./...
 	@cd services/reporting && go test ./...
+	@cd services/certifier && go test ./...
 	@echo "✅ All tests passed"
 
 test-coverage: ## Run tests with coverage
@@ -37,6 +38,7 @@ test-coverage: ## Run tests with coverage
 	@cd services/wallet && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
 	@cd services/user-auth && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
 	@cd services/reporting && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
+	@cd services/certifier && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
 	@echo "✅ Coverage reports generated"
 
 load-test: ## Run load tests
