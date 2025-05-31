@@ -1,0 +1,313 @@
+name: 🚀 Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Build and Push Production Images
+  build-production:
+    name: 🔨 Build Production Images
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      matrix:
+        service: [calculator, tracker, wallet, user-auth, reporting, certifier]
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🔨 Build and push production image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: 🔍 Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:latest
+          format: spdx-json
+          output-file: sbom-${{ matrix.service }}.spdx.json
+
+      - name: 📊 Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom-${{ matrix.service }}
+          path: sbom-${{ matrix.service }}.spdx.json
+
+  # Job 2: Deploy to Staging
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-production
+    environment: staging
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: 🔐 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🔧 Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME_STAGING }}
+
+      - name: 🏷️ Set image tags
+        run: |
+          # Update Kubernetes manifests with new image tags
+          sed -i "s|image: .*calculator.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:${{ github.sha }}|g" k8s/staging/calculator-deployment.yaml
+          sed -i "s|image: .*tracker.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tracker:${{ github.sha }}|g" k8s/staging/tracker-deployment.yaml
+          sed -i "s|image: .*wallet.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wallet:${{ github.sha }}|g" k8s/staging/wallet-deployment.yaml
+          sed -i "s|image: .*user-auth.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/user-auth:${{ github.sha }}|g" k8s/staging/user-auth-deployment.yaml
+          sed -i "s|image: .*reporting.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/reporting:${{ github.sha }}|g" k8s/staging/reporting-deployment.yaml
+
+      - name: 🚀 Deploy to staging
+        run: |
+          kubectl apply -f k8s/staging/ --namespace=greenledger-staging
+          kubectl rollout status deployment/calculator-service --namespace=greenledger-staging --timeout=300s
+          kubectl rollout status deployment/tracker-service --namespace=greenledger-staging --timeout=300s
+          kubectl rollout status deployment/wallet-service --namespace=greenledger-staging --timeout=300s
+          kubectl rollout status deployment/user-auth-service --namespace=greenledger-staging --timeout=300s
+          kubectl rollout status deployment/reporting-service --namespace=greenledger-staging --timeout=300s
+
+      - name: 🧪 Run smoke tests
+        run: |
+          # Wait for services to be ready
+          sleep 30
+          
+          # Get staging URL
+          STAGING_URL=$(kubectl get service api-gateway --namespace=greenledger-staging -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          
+          # Run basic health checks
+          curl -f http://$STAGING_URL/health || exit 1
+          curl -f http://$STAGING_URL/api/v1/calculator/health || exit 1
+          curl -f http://$STAGING_URL/api/v1/tracker/health || exit 1
+          curl -f http://$STAGING_URL/api/v1/wallet/health || exit 1
+
+      - name: 📊 Update deployment status
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment.id,
+              state: 'success',
+              environment_url: 'https://staging.greenledger.com',
+              description: 'Deployment to staging successful'
+            });
+
+  # Job 3: Deploy to Production
+  deploy-production:
+    name: 🏭 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-production, deploy-staging]
+    environment: production
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: 🔐 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🔧 Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME_PRODUCTION }}
+
+      - name: 🏷️ Set image tags
+        run: |
+          # Extract version from tag or use commit SHA
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.sha }}
+          fi
+          
+          # Update Kubernetes manifests with new image tags
+          sed -i "s|image: .*calculator.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:${VERSION}|g" k8s/production/calculator-deployment.yaml
+          sed -i "s|image: .*tracker.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tracker:${VERSION}|g" k8s/production/tracker-deployment.yaml
+          sed -i "s|image: .*wallet.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wallet:${VERSION}|g" k8s/production/wallet-deployment.yaml
+          sed -i "s|image: .*user-auth.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/user-auth:${VERSION}|g" k8s/production/user-auth-deployment.yaml
+          sed -i "s|image: .*reporting.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/reporting:${VERSION}|g" k8s/production/reporting-deployment.yaml
+
+      - name: 🚀 Deploy to production
+        run: |
+          kubectl apply -f k8s/production/ --namespace=greenledger-production
+          kubectl rollout status deployment/calculator-service --namespace=greenledger-production --timeout=600s
+          kubectl rollout status deployment/tracker-service --namespace=greenledger-production --timeout=600s
+          kubectl rollout status deployment/wallet-service --namespace=greenledger-production --timeout=600s
+          kubectl rollout status deployment/user-auth-service --namespace=greenledger-production --timeout=600s
+          kubectl rollout status deployment/reporting-service --namespace=greenledger-production --timeout=600s
+
+      - name: 🧪 Run production health checks
+        run: |
+          # Wait for services to be ready
+          sleep 60
+          
+          # Get production URL
+          PRODUCTION_URL=$(kubectl get service api-gateway --namespace=greenledger-production -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          
+          # Run comprehensive health checks
+          curl -f https://$PRODUCTION_URL/health || exit 1
+          curl -f https://$PRODUCTION_URL/api/v1/calculator/health || exit 1
+          curl -f https://$PRODUCTION_URL/api/v1/tracker/health || exit 1
+          curl -f https://$PRODUCTION_URL/api/v1/wallet/health || exit 1
+          curl -f https://$PRODUCTION_URL/api/v1/user-auth/health || exit 1
+          curl -f https://$PRODUCTION_URL/api/v1/reporting/health || exit 1
+
+      - name: 📊 Update deployment status
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment.id,
+              state: 'success',
+              environment_url: 'https://greenledger.com',
+              description: 'Deployment to production successful'
+            });
+
+      - name: 🎉 Create release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## 🚀 What's New in ${{ github.ref }}
+            
+            This release includes the latest features and improvements to GreenLedger.
+            
+            ### 📦 Docker Images
+            - Calculator Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:${{ github.ref }}`
+            - Tracker Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tracker:${{ github.ref }}`
+            - Wallet Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wallet:${{ github.ref }}`
+            - User Auth Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/user-auth:${{ github.ref }}`
+            - Reporting Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/reporting:${{ github.ref }}`
+            
+            ### 🔗 Links
+            - [Production Environment](https://greenledger.com)
+            - [API Documentation](https://greenledger.com/docs)
+            - [Monitoring Dashboard](https://monitoring.greenledger.com)
+          draft: false
+          prerelease: false
+
+  # Job 4: Rollback (Manual trigger)
+  rollback:
+    name: 🔄 Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment != ''
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: 🔐 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🔧 Update kubeconfig
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME_PRODUCTION }}
+            NAMESPACE="greenledger-production"
+          else
+            aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME_STAGING }}
+            NAMESPACE="greenledger-staging"
+          fi
+          echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+
+      - name: 🔄 Rollback deployments
+        run: |
+          kubectl rollout undo deployment/calculator-service --namespace=${{ env.NAMESPACE }}
+          kubectl rollout undo deployment/tracker-service --namespace=${{ env.NAMESPACE }}
+          kubectl rollout undo deployment/wallet-service --namespace=${{ env.NAMESPACE }}
+          kubectl rollout undo deployment/user-auth-service --namespace=${{ env.NAMESPACE }}
+          kubectl rollout undo deployment/reporting-service --namespace=${{ env.NAMESPACE }}
+          
+          # Wait for rollback to complete
+          kubectl rollout status deployment/calculator-service --namespace=${{ env.NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/tracker-service --namespace=${{ env.NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/wallet-service --namespace=${{ env.NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/user-auth-service --namespace=${{ env.NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/reporting-service --namespace=${{ env.NAMESPACE }} --timeout=300s

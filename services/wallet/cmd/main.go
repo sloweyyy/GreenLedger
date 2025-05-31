@@ -29,7 +29,7 @@ import (
 
 // @contact.name API Support
 // @contact.url http://www.greenledger.com/support
-// @contact.email support@greenledger.com
+// @contact.email truonglevinhphuc2006@gmail.com
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
