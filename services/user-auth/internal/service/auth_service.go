@@ -9,9 +9,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/greenledger/services/user-auth/internal/models"
-	"github.com/greenledger/services/user-auth/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // AuthService handles authentication operations

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/wallet/internal/models"
-	"github.com/greenledger/services/wallet/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/shopspring/decimal"
 )
 

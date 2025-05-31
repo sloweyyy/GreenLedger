@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/greenledger/services/calculator/internal/models"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // MockCalculationRepository is a mock implementation of CalculationRepository

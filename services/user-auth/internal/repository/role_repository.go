@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/user-auth/internal/models"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"gorm.io/gorm"
 )
 

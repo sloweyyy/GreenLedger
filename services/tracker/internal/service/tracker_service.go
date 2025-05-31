@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/tracker/internal/models"
-	"github.com/greenledger/services/tracker/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // TrackerService handles eco-activity tracking operations
@@ -40,16 +40,16 @@ func NewTrackerService(
 
 // LogActivityRequest represents a request to log an eco-activity
 type LogActivityRequest struct {
-	UserID         string                 `json:"user_id" binding:"required"`
-	ActivityType   string                 `json:"activity_type" binding:"required"`
-	Description    string                 `json:"description" binding:"required"`
-	Duration       int                    `json:"duration"` // in minutes
-	Distance       float64                `json:"distance"` // in kilometers
-	Quantity       float64                `json:"quantity"`
-	Unit           string                 `json:"unit"`
-	Location       string                 `json:"location"`
-	Source         string                 `json:"source"`
-	SourceData     map[string]interface{} `json:"source_data"`
+	UserID       string                 `json:"user_id" binding:"required"`
+	ActivityType string                 `json:"activity_type" binding:"required"`
+	Description  string                 `json:"description" binding:"required"`
+	Duration     int                    `json:"duration"` // in minutes
+	Distance     float64                `json:"distance"` // in kilometers
+	Quantity     float64                `json:"quantity"`
+	Unit         string                 `json:"unit"`
+	Location     string                 `json:"location"`
+	Source       string                 `json:"source"`
+	SourceData   map[string]interface{} `json:"source_data"`
 }
 
 // ActivityResponse represents an activity in API responses
@@ -237,7 +237,7 @@ func (s *TrackerService) VerifyActivity(ctx context.Context, activityID uuid.UUI
 }
 
 // GetUserStats retrieves activity statistics for a user
-func (s *TrackerService) GetUserStats(ctx context.Context, userID string, startDate, endDate time.Time) (*UserActivityStats, error) {
+func (s *TrackerService) GetUserStats(ctx context.Context, userID string, startDate, endDate time.Time) (*models.UserActivityStats, error) {
 	stats, err := s.activityRepo.GetUserStats(ctx, userID, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user stats: %w", err)
@@ -322,15 +322,4 @@ func (s *TrackerService) activityToResponse(activity *models.EcoActivity, activi
 		Source:        activity.Source,
 		CreatedAt:     activity.CreatedAt,
 	}
-}
-
-// UserActivityStats represents activity statistics for a user
-type UserActivityStats struct {
-	UserID            string    `json:"user_id"`
-	TotalActivities   int64     `json:"total_activities"`
-	TotalCreditsEarned float64  `json:"total_credits_earned"`
-	TotalDuration     int       `json:"total_duration"`
-	TotalDistance     float64   `json:"total_distance"`
-	StartDate         time.Time `json:"start_date"`
-	EndDate           time.Time `json:"end_date"`
 }

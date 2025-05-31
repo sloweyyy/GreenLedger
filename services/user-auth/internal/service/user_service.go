@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/user-auth/internal/models"
-	"github.com/greenledger/services/user-auth/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // UserService handles user management operations

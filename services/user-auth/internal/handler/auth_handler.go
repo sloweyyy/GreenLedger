@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/greenledger/services/user-auth/internal/service"
-	"github.com/greenledger/shared/logger"
-	"github.com/greenledger/shared/middleware"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/service"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/middleware"
 )
 
 // AuthHandler handles HTTP requests for authentication

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/reporting/internal/models"
-	"github.com/greenledger/services/reporting/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/shopspring/decimal"
 )
 

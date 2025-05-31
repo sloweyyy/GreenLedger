@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/greenledger/services/reporting/internal/models"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/jung-kurt/gofpdf"
 	"github.com/shopspring/decimal"
 	"github.com/wcharczuk/go-chart/v2"

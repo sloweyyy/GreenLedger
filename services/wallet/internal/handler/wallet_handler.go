@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/greenledger/services/wallet/internal/service"
-	"github.com/greenledger/shared/logger"
-	"github.com/greenledger/shared/middleware"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/service"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/middleware"
 	"github.com/shopspring/decimal"
 )
 

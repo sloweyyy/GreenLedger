@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/greenledger/services/calculator/internal/models"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"gorm.io/gorm"
 )
 

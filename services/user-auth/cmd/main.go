@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/greenledger/services/user-auth/internal/handler"
-	"github.com/greenledger/services/user-auth/internal/models"
-	"github.com/greenledger/services/user-auth/internal/repository"
-	"github.com/greenledger/services/user-auth/internal/service"
-	"github.com/greenledger/shared/config"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
-	"github.com/greenledger/shared/middleware"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/handler"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/repository"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/service"
+	"github.com/sloweyyy/GreenLedger/shared/config"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/middleware"
 )
 
 // @title GreenLedger User Authentication Service API

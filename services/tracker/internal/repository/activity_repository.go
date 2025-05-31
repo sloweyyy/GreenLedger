@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/tracker/internal/models"
-	"github.com/greenledger/services/tracker/internal/service"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"gorm.io/gorm"
 )
 
@@ -46,11 +45,11 @@ func (r *ActivityRepository) Create(ctx context.Context, activity *models.EcoAct
 // GetByID retrieves an activity by ID
 func (r *ActivityRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.EcoActivity, error) {
 	var activity models.EcoActivity
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("ActivityType").
 		First(&activity, "id = ?", id).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -181,7 +180,7 @@ func (r *ActivityRepository) GetUnverifiedActivities(ctx context.Context, limit,
 }
 
 // GetUserStats retrieves activity statistics for a user
-func (r *ActivityRepository) GetUserStats(ctx context.Context, userID string, startDate, endDate time.Time) (*service.UserActivityStats, error) {
+func (r *ActivityRepository) GetUserStats(ctx context.Context, userID string, startDate, endDate time.Time) (*models.UserActivityStats, error) {
 	var result struct {
 		TotalActivities    int64   `gorm:"column:total_activities"`
 		TotalCreditsEarned float64 `gorm:"column:total_credits_earned"`
@@ -206,7 +205,7 @@ func (r *ActivityRepository) GetUserStats(ctx context.Context, userID string, st
 		return nil, fmt.Errorf("failed to get user stats: %w", err)
 	}
 
-	stats := &service.UserActivityStats{
+	stats := &models.UserActivityStats{
 		UserID:             userID,
 		TotalActivities:    result.TotalActivities,
 		TotalCreditsEarned: result.TotalCreditsEarned,
