@@ -227,8 +227,8 @@ Modify cron schedules in workflow files:
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 - [Go Testing Guide](https://golang.org/doc/tutorial/add-a-test)
-- [Security Best Practices](SECURITY.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
+- [Security Best Practices](../SECURITY.md)
+- [Contributing Guidelines](../CONTRIBUTING.md)
 
 ---
 
