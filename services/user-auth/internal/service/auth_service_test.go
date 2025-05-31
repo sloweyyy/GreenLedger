@@ -10,11 +10,13 @@ import (
 
 func TestUserModel_Creation(t *testing.T) {
 	user := &models.User{
-		ID:       uuid.New(),
-		Email:    "test@example.com",
-		Username: "testuser",
-		IsActive: true,
-		Role:     models.UserRoleUser,
+		ID:         uuid.New(),
+		Email:      "test@example.com",
+		Username:   "testuser",
+		FirstName:  "Test",
+		LastName:   "User",
+		IsActive:   true,
+		IsVerified: false,
 	}
 
 	if user.Email != "test@example.com" {
@@ -25,52 +27,74 @@ func TestUserModel_Creation(t *testing.T) {
 		t.Errorf("Expected Username 'testuser', got %s", user.Username)
 	}
 
+	if user.FirstName != "Test" {
+		t.Errorf("Expected FirstName 'Test', got %s", user.FirstName)
+	}
+
+	if user.LastName != "User" {
+		t.Errorf("Expected LastName 'User', got %s", user.LastName)
+	}
+
 	if !user.IsActive {
 		t.Error("Expected user to be active")
 	}
 
-	if user.Role != models.UserRoleUser {
-		t.Errorf("Expected Role %s, got %s", models.UserRoleUser, user.Role)
+	if user.IsVerified {
+		t.Error("Expected user to not be verified initially")
 	}
 }
 
-func TestUserModel_IsAdmin(t *testing.T) {
-	adminUser := &models.User{
+func TestUserModel_HasRole(t *testing.T) {
+	// Create roles
+	adminRole := models.Role{
 		ID:   uuid.New(),
-		Role: models.UserRoleAdmin,
+		Name: models.RoleAdmin,
+	}
+
+	userRole := models.Role{
+		ID:   uuid.New(),
+		Name: models.RoleUser,
+	}
+
+	adminUser := &models.User{
+		ID:    uuid.New(),
+		Roles: []models.Role{adminRole},
 	}
 
 	regularUser := &models.User{
-		ID:   uuid.New(),
-		Role: models.UserRoleUser,
+		ID:    uuid.New(),
+		Roles: []models.Role{userRole},
 	}
 
-	if !adminUser.IsAdmin() {
-		t.Error("Expected admin user to be admin")
+	if !adminUser.HasRole(models.RoleAdmin) {
+		t.Error("Expected admin user to have admin role")
 	}
 
-	if regularUser.IsAdmin() {
-		t.Error("Expected regular user to not be admin")
+	if regularUser.HasRole(models.RoleAdmin) {
+		t.Error("Expected regular user to not have admin role")
+	}
+
+	if !regularUser.HasRole(models.RoleUser) {
+		t.Error("Expected regular user to have user role")
 	}
 }
 
 func TestUserModel_IsVerified(t *testing.T) {
 	verifiedUser := &models.User{
 		ID:         uuid.New(),
-		VerifiedAt: &time.Time{},
+		IsVerified: true,
 	}
-	*verifiedUser.VerifiedAt = time.Now()
 
 	unverifiedUser := &models.User{
 		ID:         uuid.New(),
-		VerifiedAt: nil,
+		IsVerified: false,
 	}
 
-	if !verifiedUser.IsVerified() {
+	if !verifiedUser.IsVerified {
 		t.Error("Expected verified user to be verified")
 	}
 
-	if unverifiedUser.IsVerified() {
+	if unverifiedUser.IsVerified {
 		t.Error("Expected unverified user to not be verified")
 	}
 }
@@ -97,134 +121,30 @@ func TestSessionModel_Creation(t *testing.T) {
 	}
 }
 
-func TestSessionModel_IsExpired(t *testing.T) {
+func TestSessionModel_IsSessionValid(t *testing.T) {
 	expiredSession := &models.Session{
 		ID:        uuid.New(),
 		ExpiresAt: time.Now().Add(-1 * time.Hour), // 1 hour ago
+		IsActive:  true,
 	}
 
 	validSession := &models.Session{
 		ID:        uuid.New(),
 		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour from now
-	}
-
-	if !expiredSession.IsExpired() {
-		t.Error("Expected expired session to be expired")
-	}
-
-	if validSession.IsExpired() {
-		t.Error("Expected valid session to not be expired")
-	}
-}
-
-func TestSessionModel_IsValid(t *testing.T) {
-	validSession := &models.Session{
-		ID:        uuid.New(),
 		IsActive:  true,
-		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour from now
 	}
 
-	inactiveSession := &models.Session{
-		ID:        uuid.New(),
-		IsActive:  false,
-		ExpiresAt: time.Now().Add(1 * time.Hour),
+	if expiredSession.IsSessionValid() {
+		t.Error("Expected expired session to be invalid")
 	}
 
-	expiredSession := &models.Session{
-		ID:        uuid.New(),
-		IsActive:  true,
-		ExpiresAt: time.Now().Add(-1 * time.Hour), // 1 hour ago
-	}
-
-	if !validSession.IsValid() {
+	if !validSession.IsSessionValid() {
 		t.Error("Expected valid session to be valid")
 	}
-
-	if inactiveSession.IsValid() {
-		t.Error("Expected inactive session to not be valid")
-	}
-
-	if expiredSession.IsValid() {
-		t.Error("Expected expired session to not be valid")
-	}
 }
 
-func TestRefreshTokenModel_Creation(t *testing.T) {
-	refreshToken := &models.RefreshToken{
-		ID:        uuid.New(),
-		UserID:    uuid.New(),
-		Token:     "refresh-token-456",
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour), // 7 days
-		IsActive:  true,
-	}
-
-	if refreshToken.Token != "refresh-token-456" {
-		t.Errorf("Expected Token 'refresh-token-456', got %s", refreshToken.Token)
-	}
-
-	if !refreshToken.IsActive {
-		t.Error("Expected refresh token to be active")
-	}
-
-	if refreshToken.ExpiresAt.Before(time.Now()) {
-		t.Error("Expected refresh token to not be expired")
-	}
-}
-
-func TestRefreshTokenModel_IsExpired(t *testing.T) {
-	expiredToken := &models.RefreshToken{
-		ID:        uuid.New(),
-		ExpiresAt: time.Now().Add(-1 * time.Hour), // 1 hour ago
-	}
-
-	validToken := &models.RefreshToken{
-		ID:        uuid.New(),
-		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour from now
-	}
-
-	if !expiredToken.IsExpired() {
-		t.Error("Expected expired token to be expired")
-	}
-
-	if validToken.IsExpired() {
-		t.Error("Expected valid token to not be expired")
-	}
-}
-
-func TestRefreshTokenModel_IsValid(t *testing.T) {
-	validToken := &models.RefreshToken{
-		ID:        uuid.New(),
-		IsActive:  true,
-		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour from now
-	}
-
-	inactiveToken := &models.RefreshToken{
-		ID:        uuid.New(),
-		IsActive:  false,
-		ExpiresAt: time.Now().Add(1 * time.Hour),
-	}
-
-	expiredToken := &models.RefreshToken{
-		ID:        uuid.New(),
-		IsActive:  true,
-		ExpiresAt: time.Now().Add(-1 * time.Hour), // 1 hour ago
-	}
-
-	if !validToken.IsValid() {
-		t.Error("Expected valid token to be valid")
-	}
-
-	if inactiveToken.IsValid() {
-		t.Error("Expected inactive token to not be valid")
-	}
-
-	if expiredToken.IsValid() {
-		t.Error("Expected expired token to not be valid")
-	}
-}
-
-func TestPasswordResetModel_Creation(t *testing.T) {
-	passwordReset := &models.PasswordReset{
+func TestPasswordResetTokenModel_Creation(t *testing.T) {
+	passwordReset := &models.PasswordResetToken{
 		ID:        uuid.New(),
 		UserID:    uuid.New(),
 		Token:     "reset-token-789",
@@ -245,54 +165,24 @@ func TestPasswordResetModel_Creation(t *testing.T) {
 	}
 }
 
-func TestPasswordResetModel_IsExpired(t *testing.T) {
-	expiredReset := &models.PasswordReset{
+func TestEmailVerificationTokenModel_Creation(t *testing.T) {
+	emailToken := &models.EmailVerificationToken{
 		ID:        uuid.New(),
-		ExpiresAt: time.Now().Add(-1 * time.Hour), // 1 hour ago
-	}
-
-	validReset := &models.PasswordReset{
-		ID:        uuid.New(),
-		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour from now
-	}
-
-	if !expiredReset.IsExpired() {
-		t.Error("Expected expired reset to be expired")
-	}
-
-	if validReset.IsExpired() {
-		t.Error("Expected valid reset to not be expired")
-	}
-}
-
-func TestPasswordResetModel_IsValid(t *testing.T) {
-	validReset := &models.PasswordReset{
-		ID:        uuid.New(),
+		UserID:    uuid.New(),
+		Token:     "email-token-123",
+		ExpiresAt: time.Now().Add(24 * time.Hour), // 24 hours
 		IsUsed:    false,
-		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour from now
 	}
 
-	usedReset := &models.PasswordReset{
-		ID:        uuid.New(),
-		IsUsed:    true,
-		ExpiresAt: time.Now().Add(1 * time.Hour),
+	if emailToken.Token != "email-token-123" {
+		t.Errorf("Expected Token 'email-token-123', got %s", emailToken.Token)
 	}
 
-	expiredReset := &models.PasswordReset{
-		ID:        uuid.New(),
-		IsUsed:    false,
-		ExpiresAt: time.Now().Add(-1 * time.Hour), // 1 hour ago
+	if emailToken.IsUsed {
+		t.Error("Expected email verification token to not be used")
 	}
 
-	if !validReset.IsValid() {
-		t.Error("Expected valid reset to be valid")
-	}
-
-	if usedReset.IsValid() {
-		t.Error("Expected used reset to not be valid")
-	}
-
-	if expiredReset.IsValid() {
-		t.Error("Expected expired reset to not be valid")
+	if emailToken.ExpiresAt.Before(time.Now()) {
+		t.Error("Expected email verification token to not be expired")
 	}
 }

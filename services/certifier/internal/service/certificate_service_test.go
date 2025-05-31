@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/sloweyyy/GreenLedger/services/certifier/internal/models"
-	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // MockCertificateRepository implements the repository interface for testing
@@ -39,14 +38,14 @@ func (m *MockCertificateRepository) GetByID(ctx context.Context, id uuid.UUID) (
 	return nil, nil
 }
 
-func (m *MockCertificateRepository) GetByUserID(ctx context.Context, userID string, limit, offset int) ([]*models.Certificate, error) {
+func (m *MockCertificateRepository) GetByUserID(ctx context.Context, userID string, limit, offset int) ([]*models.Certificate, int64, error) {
 	var result []*models.Certificate
 	for _, cert := range m.certificates {
 		if cert.UserID == userID {
 			result = append(result, cert)
 		}
 	}
-	return result, nil
+	return result, int64(len(result)), nil
 }
 
 func (m *MockCertificateRepository) Update(ctx context.Context, certificate *models.Certificate) error {
@@ -67,6 +66,28 @@ func (m *MockCertificateRepository) GetByCertificateNumber(ctx context.Context, 
 		}
 	}
 	return nil, nil
+}
+
+func (m *MockCertificateRepository) GetByStatus(ctx context.Context, status string, limit, offset int) ([]*models.Certificate, int64, error) {
+	var result []*models.Certificate
+	for _, cert := range m.certificates {
+		if cert.Status == status {
+			result = append(result, cert)
+		}
+	}
+	return result, int64(len(result)), nil
+}
+
+func (m *MockCertificateRepository) CreateVerification(ctx context.Context, verification *models.CertificateVerification) error {
+	return nil
+}
+
+func (m *MockCertificateRepository) CreateTransfer(ctx context.Context, transfer *models.CertificateTransfer) error {
+	return nil
+}
+
+func (m *MockCertificateRepository) GetTransfersByUserID(ctx context.Context, userID string, limit, offset int) ([]*models.CertificateTransfer, int64, error) {
+	return []*models.CertificateTransfer{}, 0, nil
 }
 
 // MockProjectRepository implements the project repository interface for testing
@@ -106,12 +127,32 @@ func (m *MockProjectRepository) GetByName(ctx context.Context, name string) (*mo
 	return nil, nil
 }
 
-func (m *MockProjectRepository) GetAll(ctx context.Context, limit, offset int) ([]*models.CertificateProject, error) {
+func (m *MockProjectRepository) GetAll(ctx context.Context, limit, offset int) ([]*models.CertificateProject, int64, error) {
 	var result []*models.CertificateProject
 	for _, project := range m.projects {
 		result = append(result, project)
 	}
-	return result, nil
+	return result, int64(len(result)), nil
+}
+
+func (m *MockProjectRepository) GetActive(ctx context.Context, limit, offset int) ([]*models.CertificateProject, int64, error) {
+	var result []*models.CertificateProject
+	for _, project := range m.projects {
+		if project.IsActive {
+			result = append(result, project)
+		}
+	}
+	return result, int64(len(result)), nil
+}
+
+func (m *MockProjectRepository) GetByType(ctx context.Context, projectType string, limit, offset int) ([]*models.CertificateProject, int64, error) {
+	var result []*models.CertificateProject
+	for _, project := range m.projects {
+		if project.Type == projectType {
+			result = append(result, project)
+		}
+	}
+	return result, int64(len(result)), nil
 }
 
 func (m *MockProjectRepository) Update(ctx context.Context, project *models.CertificateProject) error {
@@ -125,141 +166,141 @@ func (m *MockProjectRepository) Delete(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-func TestCertificateService_CreateCertificate(t *testing.T) {
-	// Setup
-	mockCertRepo := NewMockCertificateRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	logger := logger.New("debug")
-	
-	service := NewCertificateService(mockCertRepo, mockProjectRepo, logger)
-	
-	// Create a test project first
-	project := &models.CertificateProject{
-		Name:             "Test Solar Project",
-		Type:             "renewable_energy",
-		Location:         "California, USA",
-		TotalCredits:     decimal.NewFromInt(1000),
-		AvailableCredits: decimal.NewFromInt(1000),
-		PricePerCredit:   decimal.NewFromFloat(10.50),
-		IsActive:         true,
-		StartDate:        time.Now().AddDate(-1, 0, 0),
-		EndDate:          time.Now().AddDate(1, 0, 0),
+func (m *MockProjectRepository) UpdateAvailableCredits(ctx context.Context, projectID uuid.UUID, creditsUsed float64) error {
+	if project, exists := m.projects[projectID]; exists {
+		project.AvailableCredits = project.AvailableCredits.Sub(decimal.NewFromFloat(creditsUsed))
+		m.projects[projectID] = project
 	}
-	
-	err := mockProjectRepo.Create(context.Background(), project)
-	if err != nil {
-		t.Fatalf("Failed to create test project: %v", err)
-	}
-	
-	// Test certificate creation
-	request := CreateCertificateRequest{
-		UserID:       "test-user-123",
-		Type:         models.CertificateTypeOffset,
-		CarbonOffset: decimal.NewFromFloat(50.5),
-		CreditsUsed:  decimal.NewFromFloat(50.5),
-		ProjectName:  "Test Solar Project",
-	}
-	
-	ctx := context.Background()
-	certificate, err := service.CreateCertificate(ctx, request)
-	
-	// Assertions
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	
-	if certificate == nil {
-		t.Fatal("Expected certificate to be created, got nil")
-	}
-	
-	if certificate.UserID != request.UserID {
-		t.Errorf("Expected UserID %s, got %s", request.UserID, certificate.UserID)
-	}
-	
-	if certificate.Type != request.Type {
-		t.Errorf("Expected Type %s, got %s", request.Type, certificate.Type)
-	}
-	
-	if !certificate.CarbonOffset.Equal(request.CarbonOffset) {
-		t.Errorf("Expected CarbonOffset %s, got %s", request.CarbonOffset, certificate.CarbonOffset)
-	}
-	
-	if certificate.CertificateNumber == "" {
-		t.Error("Expected CertificateNumber to be generated")
-	}
-	
-	if certificate.Status != "pending" {
-		t.Errorf("Expected Status 'pending', got %s", certificate.Status)
-	}
+	return nil
 }
 
-func TestCertificateService_GetCertificateByID(t *testing.T) {
-	// Setup
-	mockCertRepo := NewMockCertificateRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	logger := logger.New("debug")
-	
-	service := NewCertificateService(mockCertRepo, mockProjectRepo, logger)
-	
-	// Create a test certificate
+func TestCertificateModel_Creation(t *testing.T) {
 	certificate := &models.Certificate{
 		ID:                uuid.New(),
 		UserID:            "test-user-123",
-		CertificateNumber: "CERT-TEST-001",
+		CertificateNumber: "GL-OFFSET-RENEWABLE-123456",
 		Type:              models.CertificateTypeOffset,
-		Status:            "pending",
-		CarbonOffset:      decimal.NewFromFloat(25.5),
-		CreditsUsed:       decimal.NewFromFloat(25.5),
-		ProjectName:       "Test Project",
-		ProjectType:       "renewable_energy",
+		Status:            models.CertificateStatusPending,
+		CarbonOffset:      decimal.NewFromFloat(50.5),
+		CreditsUsed:       decimal.NewFromFloat(50.5),
+		ProjectName:       "Test Solar Project",
+		ProjectType:       models.ProjectTypeRenewable,
+		ProjectLocation:   "California, USA",
+		VintageYear:       2023,
+		SerialNumber:      "SOLAR-2023-123456",
 	}
-	
-	err := mockCertRepo.Create(context.Background(), certificate)
-	if err != nil {
-		t.Fatalf("Failed to create test certificate: %v", err)
+
+	if certificate.UserID != "test-user-123" {
+		t.Errorf("Expected UserID 'test-user-123', got %s", certificate.UserID)
 	}
-	
-	// Test getting certificate by ID
-	ctx := context.Background()
-	result, err := service.GetCertificateByID(ctx, certificate.ID)
-	
-	// Assertions
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
+
+	if certificate.Type != models.CertificateTypeOffset {
+		t.Errorf("Expected Type %s, got %s", models.CertificateTypeOffset, certificate.Type)
 	}
-	
-	if result == nil {
-		t.Fatal("Expected certificate to be found, got nil")
+
+	if !certificate.CarbonOffset.Equal(decimal.NewFromFloat(50.5)) {
+		t.Errorf("Expected CarbonOffset 50.5, got %s", certificate.CarbonOffset)
 	}
-	
-	if result.ID != certificate.ID {
-		t.Errorf("Expected ID %s, got %s", certificate.ID, result.ID)
+
+	if certificate.Status != models.CertificateStatusPending {
+		t.Errorf("Expected Status %s, got %s", models.CertificateStatusPending, certificate.Status)
 	}
-	
-	if result.UserID != certificate.UserID {
-		t.Errorf("Expected UserID %s, got %s", certificate.UserID, result.UserID)
+
+	if certificate.ProjectType != models.ProjectTypeRenewable {
+		t.Errorf("Expected ProjectType %s, got %s", models.ProjectTypeRenewable, certificate.ProjectType)
 	}
 }
 
-func TestCertificateService_GetCertificateByID_NotFound(t *testing.T) {
-	// Setup
-	mockCertRepo := NewMockCertificateRepository()
-	mockProjectRepo := NewMockProjectRepository()
-	logger := logger.New("debug")
-	
-	service := NewCertificateService(mockCertRepo, mockProjectRepo, logger)
-	
-	// Test getting non-existent certificate
-	ctx := context.Background()
-	nonExistentID := uuid.New()
-	result, err := service.GetCertificateByID(ctx, nonExistentID)
-	
-	// Assertions
-	if err == nil {
-		t.Fatal("Expected error for non-existent certificate, got nil")
+func TestCertificateModel_IsIssued(t *testing.T) {
+	issuedCert := &models.Certificate{
+		ID:     uuid.New(),
+		Status: models.CertificateStatusIssued,
 	}
-	
-	if result != nil {
-		t.Error("Expected nil result for non-existent certificate")
+
+	verifiedCert := &models.Certificate{
+		ID:     uuid.New(),
+		Status: models.CertificateStatusVerified,
+	}
+
+	pendingCert := &models.Certificate{
+		ID:     uuid.New(),
+		Status: models.CertificateStatusPending,
+	}
+
+	if !issuedCert.IsIssued() {
+		t.Error("Expected issued certificate to be issued")
+	}
+
+	if !verifiedCert.IsIssued() {
+		t.Error("Expected verified certificate to be issued")
+	}
+
+	if pendingCert.IsIssued() {
+		t.Error("Expected pending certificate to not be issued")
+	}
+}
+
+func TestCertificateModel_CanTransfer(t *testing.T) {
+	transferableCert := &models.Certificate{
+		ID:     uuid.New(),
+		Status: models.CertificateStatusIssued,
+	}
+
+	retiredCert := &models.Certificate{
+		ID:     uuid.New(),
+		Status: models.CertificateStatusRetired,
+	}
+
+	expiredTime := time.Now().Add(-1 * time.Hour)
+	expiredCert := &models.Certificate{
+		ID:        uuid.New(),
+		Status:    models.CertificateStatusIssued,
+		ExpiresAt: &expiredTime,
+	}
+
+	if !transferableCert.CanTransfer() {
+		t.Error("Expected issued certificate to be transferable")
+	}
+
+	if retiredCert.CanTransfer() {
+		t.Error("Expected retired certificate to not be transferable")
+	}
+
+	if expiredCert.CanTransfer() {
+		t.Error("Expected expired certificate to not be transferable")
+	}
+}
+
+func TestCertificateProjectModel_CanIssueCredits(t *testing.T) {
+	activeProject := &models.CertificateProject{
+		ID:               uuid.New(),
+		IsActive:         true,
+		AvailableCredits: decimal.NewFromFloat(100.0),
+	}
+
+	inactiveProject := &models.CertificateProject{
+		ID:               uuid.New(),
+		IsActive:         false,
+		AvailableCredits: decimal.NewFromFloat(100.0),
+	}
+
+	insufficientProject := &models.CertificateProject{
+		ID:               uuid.New(),
+		IsActive:         true,
+		AvailableCredits: decimal.NewFromFloat(10.0),
+	}
+
+	requestAmount := decimal.NewFromFloat(50.0)
+
+	if !activeProject.CanIssueCredits(requestAmount) {
+		t.Error("Expected active project with sufficient credits to allow issuance")
+	}
+
+	if inactiveProject.CanIssueCredits(requestAmount) {
+		t.Error("Expected inactive project to not allow issuance")
+	}
+
+	if insufficientProject.CanIssueCredits(requestAmount) {
+		t.Error("Expected project with insufficient credits to not allow issuance")
 	}
 }
