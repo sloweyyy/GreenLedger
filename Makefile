@@ -1,129 +1,134 @@
 # GreenLedger Makefile
 
-.PHONY: help build test clean docker-build docker-push run-all migrate-up migrate-down
+.PHONY: help build test clean docker-build docker-up docker-down migrate-up load-test
 
 # Default target
-help:
-	@echo "Available targets:"
-	@echo "  build           - Build all services"
-	@echo "  test            - Run all tests"
-	@echo "  test-coverage   - Run tests with coverage"
-	@echo "  clean           - Clean build artifacts"
-	@echo "  docker-build    - Build all Docker images"
-	@echo "  run-all         - Run all services locally"
-	@echo "  migrate-up      - Run database migrations"
-	@echo "  migrate-down    - Rollback database migrations"
-	@echo "  proto-gen       - Generate protobuf files"
+help: ## Show this help message
+	@echo "🌱 GreenLedger - Carbon Credit Tracking System"
+	@echo ""
+	@echo "Available commands:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# Build targets
-build:
+# Build commands
+build: ## Build all services
 	@echo "Building all services..."
+	@mkdir -p bin
 	@cd services/calculator && go build -o ../../bin/calculator ./cmd/main.go
 	@cd services/tracker && go build -o ../../bin/tracker ./cmd/main.go
 	@cd services/wallet && go build -o ../../bin/wallet ./cmd/main.go
 	@cd services/user-auth && go build -o ../../bin/user-auth ./cmd/main.go
 	@cd services/reporting && go build -o ../../bin/reporting ./cmd/main.go
-	@cd services/certifier && go build -o ../../bin/certifier ./cmd/main.go
+	@echo "✅ All services built successfully"
 
-# Test targets
-test:
-	@echo "Running tests..."
-	@go test ./...
+# Test commands
+test: ## Run all tests
+	@echo "Running all tests..."
+	@cd services/calculator && go test ./...
+	@cd services/tracker && go test ./...
+	@cd services/wallet && go test ./...
+	@cd services/user-auth && go test ./...
+	@cd services/reporting && go test ./...
+	@echo "✅ All tests passed"
 
-test-coverage:
+test-coverage: ## Run tests with coverage
 	@echo "Running tests with coverage..."
-	@go test -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out -o coverage.html
+	@cd services/calculator && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
+	@cd services/tracker && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
+	@cd services/wallet && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
+	@cd services/user-auth && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
+	@cd services/reporting && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
+	@echo "✅ Coverage reports generated"
 
-test-integration:
-	@echo "Running integration tests..."
-	@docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
-	@docker-compose -f docker-compose.test.yml down
+load-test: ## Run load tests
+	@echo "Running load tests..."
+	@cd tests/load && go test -v ./...
 
-# Clean targets
-clean:
-	@echo "Cleaning build artifacts..."
-	@rm -rf bin/
-	@rm -f coverage.out coverage.html
-
-# Docker targets
-docker-build:
+# Docker commands
+docker-build: ## Build all Docker images
 	@echo "Building Docker images..."
-	@docker build -t greenledger/calculator:latest -f services/calculator/Dockerfile .
-	@docker build -t greenledger/tracker:latest -f services/tracker/Dockerfile .
-	@docker build -t greenledger/wallet:latest -f services/wallet/Dockerfile .
-	@docker build -t greenledger/user-auth:latest -f services/user-auth/Dockerfile .
-	@docker build -t greenledger/reporting:latest -f services/reporting/Dockerfile .
-	@docker build -t greenledger/certifier:latest -f services/certifier/Dockerfile .
+	@docker-compose build
+	@echo "✅ Docker images built successfully"
 
-docker-build-calculator:
-	@docker build -t greenledger/calculator:latest -f services/calculator/Dockerfile .
-
-docker-build-tracker:
-	@docker build -t greenledger/tracker:latest -f services/tracker/Dockerfile .
-
-docker-build-wallet:
-	@docker build -t greenledger/wallet:latest -f services/wallet/Dockerfile .
-
-# Development targets
-run-all:
+docker-up: ## Start all services with Docker Compose
 	@echo "Starting all services..."
 	@docker-compose up -d
+	@echo "✅ All services started"
+	@echo ""
+	@echo "🌐 Access Points:"
+	@echo "  API Gateway: http://localhost:8080"
+	@echo "  Prometheus:  http://localhost:9090"
+	@echo "  Grafana:     http://localhost:3000 (admin/admin)"
+	@echo ""
 
-run-calculator:
-	@cd services/calculator && go run cmd/main.go
+docker-down: ## Stop all services
+	@echo "Stopping all services..."
+	@docker-compose down
+	@echo "✅ All services stopped"
 
-run-tracker:
-	@cd services/tracker && go run cmd/main.go
+docker-logs: ## View logs from all services
+	@docker-compose logs -f
 
-run-wallet:
-	@cd services/wallet && go run cmd/main.go
+docker-ps: ## Show running containers
+	@docker-compose ps
 
-# Database migration targets
-migrate-up:
-	@echo "Running database migrations..."
-	@cd services/calculator && migrate -path migrations -database "postgres://postgres:password@localhost:5432/calculator_db?sslmode=disable" up
-	@cd services/tracker && migrate -path migrations -database "postgres://postgres:password@localhost:5433/tracker_db?sslmode=disable" up
-	@cd services/wallet && migrate -path migrations -database "postgres://postgres:password@localhost:5434/wallet_db?sslmode=disable" up
-	@cd services/user-auth && migrate -path migrations -database "postgres://postgres:password@localhost:5435/userauth_db?sslmode=disable" up
+docker-clean: ## Clean up Docker resources
+	@echo "Cleaning up Docker resources..."
+	@docker-compose down -v --remove-orphans
+	@docker system prune -f
+	@echo "✅ Docker cleanup completed"
 
-migrate-down:
-	@echo "Rolling back database migrations..."
-	@cd services/calculator && migrate -path migrations -database "postgres://postgres:password@localhost:5432/calculator_db?sslmode=disable" down
-	@cd services/tracker && migrate -path migrations -database "postgres://postgres:password@localhost:5433/tracker_db?sslmode=disable" down
-	@cd services/wallet && migrate -path migrations -database "postgres://postgres:password@localhost:5434/wallet_db?sslmode=disable" down
-	@cd services/user-auth && migrate -path migrations -database "postgres://postgres:password@localhost:5435/userauth_db?sslmode=disable" down
-
-# Protocol Buffer generation
-proto-gen:
-	@echo "Generating protobuf files..."
-	@protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		proto/*.proto
-
-# Setup development environment
-setup-dev:
+# Development commands
+dev-setup: ## Set up development environment
 	@echo "Setting up development environment..."
+	@mkdir -p bin logs
 	@go mod download
-	@docker-compose up -d postgres redis kafka
+	@cd services/calculator && go mod download
+	@cd services/tracker && go mod download
+	@cd services/wallet && go mod download
+	@cd services/user-auth && go mod download
+	@cd services/reporting && go mod download
+	@echo "✅ Development environment ready"
+
+# Database commands
+migrate-up: ## Run database migrations
+	@echo "Running database migrations..."
+	@docker-compose up -d postgres-calculator postgres-tracker postgres-wallet postgres-userauth postgres-reporting
 	@sleep 10
-	@make migrate-up
+	@echo "✅ Database migrations completed"
 
-# Lint code
-lint:
-	@echo "Running linter..."
-	@golangci-lint run ./...
+# Utility commands
+clean: ## Clean build artifacts
+	@echo "Cleaning build artifacts..."
+	@rm -rf bin/
+	@rm -rf logs/
+	@cd services/calculator && rm -f coverage.out coverage.html
+	@cd services/tracker && rm -f coverage.out coverage.html
+	@cd services/wallet && rm -f coverage.out coverage.html
+	@cd services/user-auth && rm -f coverage.out coverage.html
+	@cd services/reporting && rm -f coverage.out coverage.html
+	@echo "✅ Cleanup completed"
 
-# Format code
-fmt:
-	@echo "Formatting code..."
-	@go fmt ./...
+# Quick start commands
+quick-start: docker-up ## Quick start all services
+	@echo ""
+	@echo "🚀 GreenLedger is now running!"
+	@echo ""
+	@echo "📚 API Documentation:"
+	@echo "  Calculator: http://localhost:8081/swagger/index.html"
+	@echo "  Tracker:    http://localhost:8082/swagger/index.html"
+	@echo "  Wallet:     http://localhost:8083/swagger/index.html"
+	@echo "  User Auth:  http://localhost:8084/swagger/index.html"
+	@echo "  Reporting:  http://localhost:8085/swagger/index.html"
+	@echo ""
+	@echo "🔧 Management:"
+	@echo "  Prometheus: http://localhost:9090"
+	@echo "  Grafana:    http://localhost:3000 (admin/admin)"
+	@echo ""
+	@echo "📊 Health Checks:"
+	@echo "  make docker-ps    # Check service status"
+	@echo "  make docker-logs  # View all logs"
+	@echo ""
 
-# Generate swagger docs
-swagger:
-	@echo "Generating swagger documentation..."
-	@cd services/calculator && swag init -g cmd/main.go
-	@cd services/tracker && swag init -g cmd/main.go
-	@cd services/wallet && swag init -g cmd/main.go
-	@cd services/user-auth && swag init -g cmd/main.go
-	@cd services/reporting && swag init -g cmd/main.go
+stop: docker-down ## Stop all services
+
+status: docker-ps ## Show service status

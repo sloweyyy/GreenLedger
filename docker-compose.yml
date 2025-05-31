@@ -151,6 +151,103 @@ services:
       timeout: 10s
       retries: 3
 
+  # Tracker Service
+  tracker-service:
+    build:
+      context: .
+      dockerfile: services/tracker/Dockerfile
+    container_name: greenledger-tracker
+    ports:
+      - "8082:8082"
+      - "9082:9082"
+    environment:
+      DB_HOST: postgres-tracker
+      DB_PORT: 5432
+      DB_NAME: tracker_db
+      DB_USER: postgres
+      DB_PASSWORD: password
+      KAFKA_BROKERS: kafka:9092
+      SERVER_PORT: 8082
+      GRPC_PORT: 9082
+      JWT_SECRET: your-secret-key
+      LOG_LEVEL: info
+      ENVIRONMENT: development
+    depends_on:
+      postgres-tracker:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Wallet Service
+  wallet-service:
+    build:
+      context: .
+      dockerfile: services/wallet/Dockerfile
+    container_name: greenledger-wallet
+    ports:
+      - "8083:8083"
+      - "9083:9083"
+    environment:
+      DB_HOST: postgres-wallet
+      DB_PORT: 5432
+      DB_NAME: wallet_db
+      DB_USER: postgres
+      DB_PASSWORD: password
+      KAFKA_BROKERS: kafka:9092
+      SERVER_PORT: 8083
+      GRPC_PORT: 9083
+      JWT_SECRET: your-secret-key
+      LOG_LEVEL: info
+      ENVIRONMENT: development
+    depends_on:
+      postgres-wallet:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # User Auth Service
+  user-auth-service:
+    build:
+      context: .
+      dockerfile: services/user-auth/Dockerfile
+    container_name: greenledger-user-auth
+    ports:
+      - "8084:8084"
+      - "9084:9084"
+    environment:
+      DB_HOST: postgres-userauth
+      DB_PORT: 5432
+      DB_NAME: userauth_db
+      DB_USER: postgres
+      DB_PASSWORD: password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SERVER_PORT: 8084
+      GRPC_PORT: 9084
+      JWT_SECRET: your-secret-key
+      LOG_LEVEL: info
+      ENVIRONMENT: development
+    depends_on:
+      postgres-userauth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # API Gateway (Traefik)
   traefik:
     image: traefik:v3.0
