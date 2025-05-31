@@ -4,50 +4,35 @@
 run:
   # Timeout for analysis
   timeout: 5m
-  
+
   # Exit code when at least one issue was found
   issues-exit-code: 1
-  
+
   # Include test files or not
   tests: true
-  
+
   # List of build tags, all linters use it
   build-tags:
     - integration
     - e2e
-  
-  # Which dirs to skip: issues from them won't be reported
-  skip-dirs:
-    - vendor
-    - testdata
-    - tmp
-    - bin
-    - dist
-    - node_modules
-  
-  # Which files to skip: they will be analyzed, but issues from them won't be reported
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*_mock\\.go$"
-    - "wire_gen\\.go$"
+
+
 
 # Output configuration options
 output:
-  # Colored output
-  format: colored-line-number
-  
+  # Output formats
+  formats:
+    - format: colored-line-number
+
   # Print lines of code with issue
   print-issued-lines: true
-  
+
   # Print linter name in the end of issue text
   print-linter-name: true
-  
-  # Make issues output unique by line
-  uniq-by-line: true
-  
+
   # Add a prefix to the output file references
   path-prefix: ""
-  
+
   # Sort results by: filepath, line and column
   sort-results: true
 
@@ -57,10 +42,10 @@ linters-settings:
   errcheck:
     # Report about not checking of errors in type assertions: `a := b.(MyStruct)`
     check-type-assertions: true
-    
+
     # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`
     check-blank: false
-    
+
     # List of functions to exclude from checking
     exclude-functions:
       - io/ioutil.ReadFile
@@ -69,9 +54,6 @@ linters-settings:
 
   # Govet settings
   govet:
-    # Report about shadowed variables
-    check-shadowing: true
-    
     # Settings per analyzer
     settings:
       printf:
@@ -218,70 +200,55 @@ linters-settings:
 linters:
   # Disable all linters as default is true
   disable-all: true
-  
+
   # Enable specific linters
   enable:
     - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
-    - dupl
     - errcheck
-    - exportloopref
-    - exhaustive
     - goconst
     - gocritic
     - gofmt
     - goimports
-    - golint
-    - gomnd
-    - goprintffuncname
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
-    - lll
     - misspell
     - nakedret
-    - noctx
-    - nolintlint
-    - rowserrcheck
-    - scopelint
+    - shadow
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
 
-  # Don't enable these linters
-  disable:
-    - asciicheck
-    - funlen
-    - gochecknoglobals
-    - gochecknoinits
-    - gocognit
-    - gocyclo
-    - godot
-    - godox
-    - goerr113
-    - maligned
-    - nestif
-    - prealloc
-    - testpackage
-    - wsl
-
 issues:
+  # Which dirs to exclude: issues from them won't be reported
+  exclude-dirs:
+    - vendor
+    - testdata
+    - tmp
+    - bin
+    - dist
+    - node_modules
+
+  # Which files to exclude: they will be analyzed, but issues from them won't be reported
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_mock\\.go$"
+    - "wire_gen\\.go$"
+
+  # Make issues output unique by line
+  uniq-by-line: true
+
   # List of regexps of issue texts to exclude
   exclude:
     # Exclude some linters from running on tests files
     - "G404: Use of weak random number generator"
     - "G204: Subprocess launched with variable"
-    
+
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     # Exclude some linters from running on tests files
@@ -292,51 +259,51 @@ issues:
         - dupl
         - lll
         - gosec
-    
+
     # Exclude known linters from partially hard-to-fix issues
     - linters:
         - gosec
       text: "G204: Subprocess launched with variable"
-    
+
     - linters:
         - lll
       source: "^//go:generate "
 
   # Independently of option `exclude` we use default exclude patterns
   exclude-use-default: false
-  
+
   # If set to true exclude and exclude-rules regular expressions become case sensitive
   exclude-case-sensitive: false
-  
+
   # The list of ids of default excludes to include or disable
   include:
     - EXC0002 # disable excluding of issues about comments from golint
-  
+
   # Maximum issues count per one linter
   max-issues-per-linter: 50
-  
+
   # Maximum count of issues with the same text
   max-same-issues: 3
-  
+
   # Show only new issues: if there are unstaged changes or untracked files, only those changes are analyzed
   new: false
-  
+
   # Show only new issues created after git revision `REV`
   new-from-rev: ""
-  
+
   # Show only new issues created in git patch with set file path
   new-from-patch: ""
-  
+
   # Fix found issues (if it's supported by the linter)
   fix: false
 
 severity:
   # Default value is empty string
   default-severity: error
-  
+
   # If set to true severity-rules regular expressions become case sensitive
   case-sensitive: false
-  
+
   # Default value is empty list
   rules:
     - linters:
