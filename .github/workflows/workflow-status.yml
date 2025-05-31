@@ -1,0 +1,308 @@
+name: 📊 Workflow Status Check
+
+on:
+  workflow_run:
+    workflows: ["🔄 Continuous Integration", "🚀 Deploy to Production", "📦 Release Management", "🔒 Security Scanning"]
+    types:
+      - completed
+  schedule:
+    # Run daily at 8 AM UTC to check overall health
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  # Job 1: Check Workflow Health
+  workflow-health:
+    name: 🏥 Workflow Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Check recent workflow runs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: workflows } = await github.rest.actions.listRepoWorkflows({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            
+            console.log('📊 Workflow Status Summary');
+            console.log('========================');
+            
+            let healthyWorkflows = 0;
+            let totalWorkflows = 0;
+            
+            for (const workflow of workflows.workflows) {
+              if (workflow.state === 'active') {
+                totalWorkflows++;
+                
+                // Get recent runs for this workflow
+                const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: workflow.id,
+                  per_page: 5
+                });
+                
+                const recentRuns = runs.workflow_runs.slice(0, 5);
+                const successfulRuns = recentRuns.filter(run => run.conclusion === 'success').length;
+                const failedRuns = recentRuns.filter(run => run.conclusion === 'failure').length;
+                
+                const healthScore = recentRuns.length > 0 ? (successfulRuns / recentRuns.length) * 100 : 0;
+                
+                let status = '🟢';
+                if (healthScore < 50) status = '🔴';
+                else if (healthScore < 80) status = '🟡';
+                
+                if (healthScore >= 80) healthyWorkflows++;
+                
+                console.log(`${status} ${workflow.name}`);
+                console.log(`   Health: ${healthScore.toFixed(1)}% (${successfulRuns}/${recentRuns.length} recent runs successful)`);
+                console.log(`   Last run: ${recentRuns[0]?.created_at || 'Never'}`);
+                console.log('');
+              }
+            }
+            
+            const overallHealth = totalWorkflows > 0 ? (healthyWorkflows / totalWorkflows) * 100 : 0;
+            console.log(`📈 Overall Health: ${overallHealth.toFixed(1)}% (${healthyWorkflows}/${totalWorkflows} workflows healthy)`);
+            
+            // Set output for badge generation
+            core.setOutput('overall-health', overallHealth.toFixed(1));
+            core.setOutput('healthy-workflows', healthyWorkflows);
+            core.setOutput('total-workflows', totalWorkflows);
+
+      - name: 🚨 Check for failing workflows
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              status: 'failure',
+              per_page: 10
+            });
+            
+            const recentFailures = runs.workflow_runs.filter(run => {
+              const runDate = new Date(run.created_at);
+              const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+              return runDate > dayAgo;
+            });
+            
+            if (recentFailures.length > 0) {
+              console.log('🚨 Recent Workflow Failures (last 24h):');
+              console.log('=====================================');
+              
+              for (const run of recentFailures) {
+                console.log(`❌ ${run.name} - ${run.head_commit?.message || 'No message'}`);
+                console.log(`   Branch: ${run.head_branch}`);
+                console.log(`   Failed: ${run.created_at}`);
+                console.log(`   URL: ${run.html_url}`);
+                console.log('');
+              }
+              
+              // Create issue for persistent failures
+              const persistentFailures = recentFailures.filter(run => {
+                return recentFailures.filter(r => r.name === run.name).length >= 3;
+              });
+              
+              if (persistentFailures.length > 0) {
+                const issueBody = `## 🚨 Persistent Workflow Failures Detected
+            
+            The following workflows have failed multiple times in the last 24 hours:
+            
+            ${persistentFailures.map(run => `- **${run.name}** - [View Run](${run.html_url})`).join('\n')}
+            
+            ### Recommended Actions:
+            1. Review the failing workflow logs
+            2. Check for recent changes that might have caused the failures
+            3. Fix any identified issues
+            4. Re-run the workflows to verify fixes
+            
+            This issue was automatically created by the Workflow Status Check.`;
+            
+                try {
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: '🚨 Persistent Workflow Failures Detected',
+                    body: issueBody,
+                    labels: ['bug', 'ci/cd', 'automated']
+                  });
+                  console.log('📝 Created issue for persistent failures');
+                } catch (error) {
+                  console.log('ℹ️ Issue may already exist for persistent failures');
+                }
+              }
+            } else {
+              console.log('✅ No recent workflow failures detected');
+            }
+
+      - name: 📊 Generate workflow status badge
+        run: |
+          HEALTH_SCORE="${{ steps.workflow-health.outputs.overall-health }}"
+          HEALTHY="${{ steps.workflow-health.outputs.healthy-workflows }}"
+          TOTAL="${{ steps.workflow-health.outputs.total-workflows }}"
+          
+          # Determine badge color
+          if (( $(echo "$HEALTH_SCORE >= 90" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$HEALTH_SCORE >= 70" | bc -l) )); then
+            COLOR="yellow"
+          else
+            COLOR="red"
+          fi
+          
+          echo "Badge: ![Workflow Health](https://img.shields.io/badge/Workflow%20Health-${HEALTH_SCORE}%25-${COLOR})"
+          echo "Status: ${HEALTHY}/${TOTAL} workflows healthy"
+
+  # Job 2: Security Workflow Status
+  security-status:
+    name: 🔒 Security Workflow Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Check security scan results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Check for recent security workflow runs
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'security.yml',
+              per_page: 5
+            });
+            
+            console.log('🔒 Security Workflow Status');
+            console.log('==========================');
+            
+            if (runs.workflow_runs.length === 0) {
+              console.log('⚠️ No security workflow runs found');
+              return;
+            }
+            
+            const latestRun = runs.workflow_runs[0];
+            console.log(`Latest run: ${latestRun.conclusion} (${latestRun.created_at})`);
+            
+            if (latestRun.conclusion === 'failure') {
+              console.log('🚨 Latest security scan failed - review required');
+            } else if (latestRun.conclusion === 'success') {
+              console.log('✅ Latest security scan passed');
+            }
+            
+            // Check for security alerts
+            try {
+              const { data: alerts } = await github.rest.secretScanning.listAlertsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open'
+              });
+              
+              if (alerts.length > 0) {
+                console.log(`🚨 ${alerts.length} open secret scanning alerts`);
+              } else {
+                console.log('✅ No open secret scanning alerts');
+              }
+            } catch (error) {
+              console.log('ℹ️ Secret scanning not available or no permissions');
+            }
+
+  # Job 3: Performance Monitoring
+  performance-monitor:
+    name: ⚡ Performance Monitoring
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📊 Check workflow performance
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 20
+            });
+            
+            console.log('⚡ Workflow Performance Analysis');
+            console.log('===============================');
+            
+            const workflowStats = {};
+            
+            for (const run of runs.workflow_runs) {
+              if (run.conclusion === 'success' && run.run_started_at && run.updated_at) {
+                const duration = new Date(run.updated_at) - new Date(run.run_started_at);
+                const minutes = Math.round(duration / 60000);
+                
+                if (!workflowStats[run.name]) {
+                  workflowStats[run.name] = [];
+                }
+                workflowStats[run.name].push(minutes);
+              }
+            }
+            
+            for (const [name, durations] of Object.entries(workflowStats)) {
+              if (durations.length > 0) {
+                const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+                const max = Math.max(...durations);
+                const min = Math.min(...durations);
+                
+                console.log(`📈 ${name}:`);
+                console.log(`   Average: ${avg.toFixed(1)} minutes`);
+                console.log(`   Range: ${min}-${max} minutes`);
+                console.log('');
+              }
+            }
+
+  # Job 4: Dependency Health
+  dependency-health:
+    name: 📦 Dependency Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐹 Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: 🔍 Check for outdated dependencies
+        run: |
+          echo "📦 Dependency Health Check"
+          echo "========================="
+          
+          # Check root dependencies
+          if [ -f "go.mod" ]; then
+            echo "🔍 Checking root dependencies..."
+            go list -u -m all | grep -E '\[.*\]' || echo "✅ All root dependencies up to date"
+            echo ""
+          fi
+          
+          # Check service dependencies
+          for service_dir in services/*/; do
+            if [ -f "$service_dir/go.mod" ]; then
+              service_name=$(basename "$service_dir")
+              echo "🔍 Checking $service_name dependencies..."
+              cd "$service_dir"
+              go list -u -m all | grep -E '\[.*\]' || echo "✅ All $service_name dependencies up to date"
+              cd - > /dev/null
+              echo ""
+            fi
+          done
+
+      - name: 📊 Generate summary
+        run: |
+          echo "## 📊 Repository Health Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏥 **Workflow Health**: Check individual job results above" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 **Security Status**: Latest security scans reviewed" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚡ **Performance**: Workflow execution times analyzed" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 **Dependencies**: Dependency health checked" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "For detailed information, review the individual job logs above." >> $GITHUB_STEP_SUMMARY

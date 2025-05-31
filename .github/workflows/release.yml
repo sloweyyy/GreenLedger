@@ -1,0 +1,373 @@
+name: 📦 Release Management
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., v1.2.3)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as pre-release"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Validate Release
+  validate-release:
+    name: ✅ Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is-prerelease: ${{ steps.version.outputs.is-prerelease }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🏷️ Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+            # Check if it's a pre-release (contains alpha, beta, rc)
+            if [[ $VERSION =~ (alpha|beta|rc) ]]; then
+              IS_PRERELEASE=true
+            else
+              IS_PRERELEASE=false
+            fi
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+          echo "Is Pre-release: $IS_PRERELEASE"
+
+      - name: 🔍 Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: v1.2.3 or v1.2.3-alpha1"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: 📋 Check changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            echo "⚠️ Warning: Version $VERSION not found in CHANGELOG.md"
+            echo "Please update CHANGELOG.md before releasing"
+          else
+            echo "✅ Changelog entry found for $VERSION"
+          fi
+
+  # Job 2: Run Full Test Suite
+  test-suite:
+    name: 🧪 Full Test Suite
+    runs-on: ubuntu-latest
+    needs: validate-release
+    strategy:
+      matrix:
+        test-type: [unit, integration, load]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐹 Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: 📦 Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: 🧪 Run unit tests
+        if: matrix.test-type == 'unit'
+        run: |
+          make test
+          make test-coverage
+
+      - name: 🔗 Run integration tests
+        if: matrix.test-type == 'integration'
+        run: |
+          docker-compose up -d postgres-calculator postgres-tracker postgres-wallet postgres-userauth redis kafka
+          sleep 30
+          # Run integration tests if they exist
+          if [ -d "tests/integration" ]; then
+            cd tests/integration && go test -v ./...
+          fi
+          docker-compose down
+
+      - name: ⚡ Run load tests
+        if: matrix.test-type == 'load'
+        run: |
+          docker-compose up -d
+          sleep 60
+          make load-test
+          docker-compose down
+
+  # Job 3: Build Release Artifacts
+  build-artifacts:
+    name: 🔨 Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate-release, test-suite]
+    strategy:
+      matrix:
+        service: [calculator, tracker, wallet, user-auth, reporting, certifier]
+        os: [linux, darwin, windows]
+        arch: [amd64, arm64]
+        exclude:
+          - os: windows
+            arch: arm64
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐹 Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: 🔨 Build binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          VERSION: ${{ needs.validate-release.outputs.version }}
+        run: |
+          if [ -d "services/${{ matrix.service }}" ]; then
+            cd services/${{ matrix.service }}
+            
+            # Set binary name
+            BINARY_NAME="${{ matrix.service }}"
+            if [ "${{ matrix.os }}" == "windows" ]; then
+              BINARY_NAME="${{ matrix.service }}.exe"
+            fi
+            
+            # Build with version info
+            go build -ldflags="-X main.Version=$VERSION -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              -o "../../dist/${{ matrix.service }}-${{ matrix.os }}-${{ matrix.arch }}/$BINARY_NAME" \
+              ./cmd/main.go
+              
+            # Create archive
+            cd ../../dist
+            if [ "${{ matrix.os }}" == "windows" ]; then
+              zip -r "${{ matrix.service }}-$VERSION-${{ matrix.os }}-${{ matrix.arch }}.zip" \
+                "${{ matrix.service }}-${{ matrix.os }}-${{ matrix.arch }}/"
+            else
+              tar -czf "${{ matrix.service }}-$VERSION-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" \
+                "${{ matrix.service }}-${{ matrix.os }}-${{ matrix.arch }}/"
+            fi
+          fi
+
+      - name: 📊 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ matrix.service }}
+          path: dist/${{ matrix.service }}-*
+
+  # Job 4: Build and Push Docker Images
+  build-docker:
+    name: 🐳 Build Release Docker Images
+    runs-on: ubuntu-latest
+    needs: [validate-release, test-suite]
+    strategy:
+      matrix:
+        service: [calculator, tracker, wallet, user-auth]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🔍 Check if Dockerfile exists
+        id: dockerfile-check
+        run: |
+          if [ -f "./services/${{ matrix.service }}/Dockerfile" ]; then
+            echo "dockerfile-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile-exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Dockerfile not found for ${{ matrix.service }}, skipping Docker build"
+          fi
+
+      - name: 🔨 Build and push Docker image
+        if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 5: Generate Release Notes
+  generate-release-notes:
+    name: 📝 Generate Release Notes
+    runs-on: ubuntu-latest
+    needs: validate-release
+    outputs:
+      release-notes: ${{ steps.notes.outputs.release-notes }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📝 Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+
+          # Extract changelog section for this version
+          if grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            RELEASE_NOTES=$(sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
+          else
+            # Generate from git commits
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+            if [ -n "$PREVIOUS_TAG" ]; then
+              RELEASE_NOTES="## Changes since $PREVIOUS_TAG"$'\n\n'
+              RELEASE_NOTES+=$(git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD)
+            else
+              RELEASE_NOTES="## Initial Release"$'\n\n'"This is the first release of GreenLedger."
+            fi
+          fi
+
+          # Add Docker images section
+          RELEASE_NOTES+=$'\n\n'"## 🐳 Docker Images"$'\n\n'
+          RELEASE_NOTES+="- Calculator: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:$VERSION\`"$'\n'
+          RELEASE_NOTES+="- Tracker: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tracker:$VERSION\`"$'\n'
+          RELEASE_NOTES+="- Wallet: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wallet:$VERSION\`"$'\n'
+          RELEASE_NOTES+="- User Auth: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/user-auth:$VERSION\`"$'\n'
+          RELEASE_NOTES+="- Reporting: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/reporting:$VERSION\`"$'\n'
+
+          # Add installation instructions
+          RELEASE_NOTES+=$'\n\n'"## 🚀 Installation"$'\n\n'
+          RELEASE_NOTES+="### Docker Compose"$'\n'
+          RELEASE_NOTES+="\`\`\`bash"$'\n'
+          RELEASE_NOTES+="curl -O https://raw.githubusercontent.com/${{ github.repository }}/$VERSION/docker-compose.yml"$'\n'
+          RELEASE_NOTES+="docker-compose up -d"$'\n'
+          RELEASE_NOTES+="\`\`\`"$'\n'
+
+          # Save to output
+          echo "release-notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # Job 6: Create GitHub Release
+  create-release:
+    name: 🎉 Create GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      [validate-release, build-artifacts, build-docker, generate-release-notes]
+    steps:
+      - name: 📥 Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: 📦 Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts/ -name "*.tar.gz" -o -name "*.zip" | xargs -I {} cp {} release-assets/
+
+          # Create checksums
+          cd release-assets
+          sha256sum * > checksums.txt
+
+      - name: 🎉 Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.validate-release.outputs.version }}
+          release_name: GreenLedger ${{ needs.validate-release.outputs.version }}
+          body: ${{ needs.generate-release-notes.outputs.release-notes }}
+          draft: false
+          prerelease: ${{ needs.validate-release.outputs.is-prerelease }}
+
+      - name: 📎 Upload release assets
+        run: |
+          for file in release-assets/*; do
+            echo "Uploading $file..."
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -H "Content-Type: application/octet-stream" \
+                 --data-binary @"$file" \
+                 "${{ steps.create_release.outputs.upload_url }}?name=$(basename $file)"
+          done
+
+  # Job 7: Update Documentation
+  update-docs:
+    name: 📚 Update Documentation
+    runs-on: ubuntu-latest
+    needs: [validate-release, create-release]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Update version in README
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          sed -i "s/version-[0-9]\+\.[0-9]\+\.[0-9]\+/version-${VERSION#v}/g" README.md
+          sed -i "s/:v[0-9]\+\.[0-9]\+\.[0-9]\+/:$VERSION/g" README.md
+
+      - name: 📝 Update Docker Compose version
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          sed -i "s|image: .*/calculator:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:$VERSION|g" docker-compose.yml
+          sed -i "s|image: .*/tracker:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tracker:$VERSION|g" docker-compose.yml
+          sed -i "s|image: .*/wallet:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wallet:$VERSION|g" docker-compose.yml
+          sed -i "s|image: .*/user-auth:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/user-auth:$VERSION|g" docker-compose.yml
+          sed -i "s|image: .*/reporting:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/reporting:$VERSION|g" docker-compose.yml
+
+      - name: 💾 Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md docker-compose.yml
+          git commit -m "docs: update version references to ${{ needs.validate-release.outputs.version }}" || exit 0
+          git push
