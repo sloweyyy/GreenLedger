@@ -7,22 +7,22 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/calculator/internal/models"
-	"github.com/greenledger/services/calculator/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // CalculatorService handles carbon footprint calculations
 type CalculatorService struct {
-	calculationRepo    *repository.CalculationRepository
-	emissionFactorRepo *repository.EmissionFactorRepository
+	calculationRepo    repository.CalculationRepositoryInterface
+	emissionFactorRepo repository.EmissionFactorRepositoryInterface
 	logger             *logger.Logger
 }
 
 // NewCalculatorService creates a new calculator service
 func NewCalculatorService(
-	calculationRepo *repository.CalculationRepository,
-	emissionFactorRepo *repository.EmissionFactorRepository,
+	calculationRepo repository.CalculationRepositoryInterface,
+	emissionFactorRepo repository.EmissionFactorRepositoryInterface,
 	logger *logger.Logger,
 ) *CalculatorService {
 	return &CalculatorService{

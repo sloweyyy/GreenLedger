@@ -1,0 +1,191 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: greenledger-ingress
+  namespace: greenledger-production
+  labels:
+    app: greenledger
+    environment: production
+  annotations:
+    # NGINX Ingress Controller annotations
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://production.greenledger.app,http://localhost:3000"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET,POST,PUT,DELETE,OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization,X-Requested-With"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self';" always;
+    
+    # Load balancing
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    
+    # Body size
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    
+    # SSL/TLS
+    cert-manager.io/cluster-issuer: "letsencrypt-production"
+spec:
+  tls:
+  - hosts:
+    - production-api.greenledger.app
+    secretName: greenledger-production-tls
+  rules:
+  - host: production-api.greenledger.app
+    http:
+      paths:
+      # Calculator Service
+      - path: /api/v1/calculator(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: calculator-service
+            port:
+              number: 8081
+      
+      # Tracker Service
+      - path: /api/v1/tracker(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: tracker-service
+            port:
+              number: 8082
+      
+      # Wallet Service
+      - path: /api/v1/wallet(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: wallet-service
+            port:
+              number: 8083
+      
+      # User Auth Service
+      - path: /api/v1/auth(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: user-auth-service
+            port:
+              number: 8084
+      
+      # Reporting Service
+      - path: /api/v1/reports(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: reporting-service
+            port:
+              number: 8085
+      
+      # Health check endpoint (load balancer)
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: user-auth-service
+            port:
+              number: 8084
+      
+      # Metrics endpoint (for monitoring)
+      - path: /metrics
+        pathType: Exact
+        backend:
+          service:
+            name: user-auth-service
+            port:
+              number: 8084
+---
+# Certificate for production environment
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: greenledger-production-cert
+  namespace: greenledger-production
+  labels:
+    app: greenledger
+    environment: production
+spec:
+  secretName: greenledger-production-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+  - production-api.greenledger.app
+---
+# Middleware for additional security (if using Traefik)
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: greenledger-production
+  labels:
+    app: greenledger
+    environment: production
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      X-Frame-Options: "SAMEORIGIN"
+      X-Content-Type-Options: "nosniff"
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+    contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self';"
+---
+# Rate limiting middleware (if using Traefik)
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: greenledger-production
+  labels:
+    app: greenledger
+    environment: production
+spec:
+  rateLimit:
+    average: 100
+    period: 1m
+    burst: 20
+---
+# Service Monitor for Prometheus (if using Prometheus Operator)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: greenledger-services
+  namespace: greenledger-production
+  labels:
+    app: greenledger
+    environment: production
+spec:
+  selector:
+    matchLabels:
+      app: greenledger
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - greenledger-production

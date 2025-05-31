@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/greenledger/services/calculator/internal/handler"
-	"github.com/greenledger/services/calculator/internal/models"
-	"github.com/greenledger/services/calculator/internal/repository"
-	"github.com/greenledger/services/calculator/internal/service"
-	"github.com/greenledger/shared/config"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
-	"github.com/greenledger/shared/middleware"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/handler"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/repository"
+	"github.com/sloweyyy/GreenLedger/services/calculator/internal/service"
+	"github.com/sloweyyy/GreenLedger/shared/config"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	sharedLogger "github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/middleware"
 )
 
 // @title GreenLedger Calculator Service API
@@ -54,7 +54,7 @@ func main() {
 	cfg.Server.GRPCPort = 9081
 
 	// Initialize logger
-	logger := logger.New(cfg.Server.LogLevel).WithService("calculator")
+	logger := sharedLogger.New(cfg.Server.LogLevel).WithService("calculator")
 
 	// Initialize database
 	db, err := database.NewPostgresDB(&cfg.Database, logger)
@@ -128,8 +128,8 @@ func main() {
 	// Start server in a goroutine
 	go func() {
 		logger.LogInfo(context.Background(), "starting calculator service",
-			logger.Int("port", cfg.Server.Port),
-			logger.String("environment", cfg.Server.Environment))
+			sharedLogger.Int("port", cfg.Server.Port),
+			sharedLogger.String("environment", cfg.Server.Environment))
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.LogError(context.Background(), "failed to start server", err)
@@ -164,7 +164,7 @@ func main() {
 }
 
 // initializeEmissionFactors initializes default emission factors
-func initializeEmissionFactors(ctx context.Context, repo *repository.EmissionFactorRepository, logger *logger.Logger) error {
+func initializeEmissionFactors(ctx context.Context, repo *repository.EmissionFactorRepository, logger *sharedLogger.Logger) error {
 	// Check if emission factors already exist
 	factors, _, err := repo.GetAll(ctx, "", "", 1, 0)
 	if err != nil {
@@ -224,7 +224,7 @@ func initializeEmissionFactors(ctx context.Context, repo *repository.EmissionFac
 	}
 
 	logger.LogInfo(ctx, "default emission factors initialized successfully",
-		logger.Int("count", len(defaultFactors)))
+		sharedLogger.Int("count", len(defaultFactors)))
 
 	return nil
 }

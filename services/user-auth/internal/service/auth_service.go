@@ -9,9 +9,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/greenledger/services/user-auth/internal/models"
-	"github.com/greenledger/services/user-auth/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // AuthService handles authentication operations
@@ -65,15 +65,24 @@ type AuthResponse struct {
 
 // UserResponse represents a user in API responses
 type UserResponse struct {
-	ID         uuid.UUID `json:"id"`
-	Email      string    `json:"email"`
-	Username   string    `json:"username"`
-	FirstName  string    `json:"first_name"`
-	LastName   string    `json:"last_name"`
-	IsActive   bool      `json:"is_active"`
-	IsVerified bool      `json:"is_verified"`
-	Roles      []string  `json:"roles"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID         uuid.UUID            `json:"id"`
+	Email      string               `json:"email"`
+	Username   string               `json:"username"`
+	FirstName  string               `json:"first_name"`
+	LastName   string               `json:"last_name"`
+	IsActive   bool                 `json:"is_active"`
+	IsVerified bool                 `json:"is_verified"`
+	Roles      []string             `json:"roles"`
+	CreatedAt  time.Time            `json:"created_at"`
+	Profile    *UserProfileResponse `json:"profile,omitempty"`
+}
+
+// UserProfileResponse represents user profile information in API responses
+type UserProfileResponse struct {
+	Bio         string `json:"bio"`
+	Location    string `json:"location"`
+	Website     string `json:"website"`
+	PhoneNumber string `json:"phone_number"`
 }
 
 // JWTClaims represents JWT token claims

@@ -7,13 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
-	"github.com/greenledger/services/reporting/internal/models"
-	"github.com/greenledger/shared/logger"
 	"github.com/jung-kurt/gofpdf"
-	"github.com/shopspring/decimal"
-	"github.com/wcharczuk/go-chart/v2"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // PDFReportRenderer implements ReportRenderer for PDF format
@@ -76,8 +73,8 @@ func (r *PDFReportRenderer) renderFootprintPDF(pdf *gofpdf.Fpdf, data *models.Fo
 
 	// Report period
 	pdf.SetFont("Arial", "", 12)
-	pdf.Cell(190, 8, fmt.Sprintf("Period: %s to %s", 
-		data.StartDate.Format("2006-01-02"), 
+	pdf.Cell(190, 8, fmt.Sprintf("Period: %s to %s",
+		data.StartDate.Format("2006-01-02"),
 		data.EndDate.Format("2006-01-02")))
 	pdf.Ln(10)
 
@@ -87,11 +84,13 @@ func (r *PDFReportRenderer) renderFootprintPDF(pdf *gofpdf.Fpdf, data *models.Fo
 	pdf.Ln(10)
 
 	pdf.SetFont("Arial", "", 11)
-	pdf.Cell(190, 6, fmt.Sprintf("Total CO2 Emissions: %.2f kg", data.TotalCO2Kg))
+	totalCO2, _ := data.TotalCO2Kg.Float64()
+	avgPerDay, _ := data.AveragePerDay.Float64()
+	pdf.Cell(190, 6, fmt.Sprintf("Total CO2 Emissions: %.2f kg", totalCO2))
 	pdf.Ln(6)
 	pdf.Cell(190, 6, fmt.Sprintf("Total Calculations: %d", data.TotalCalculations))
 	pdf.Ln(6)
-	pdf.Cell(190, 6, fmt.Sprintf("Average per Day: %.2f kg", data.AveragePerDay))
+	pdf.Cell(190, 6, fmt.Sprintf("Average per Day: %.2f kg", avgPerDay))
 	pdf.Ln(15)
 
 	// Activity breakdown
@@ -102,7 +101,8 @@ func (r *PDFReportRenderer) renderFootprintPDF(pdf *gofpdf.Fpdf, data *models.Fo
 
 		pdf.SetFont("Arial", "", 11)
 		for activityType, co2 := range data.ByActivityType {
-			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f kg CO2", activityType, co2))
+			co2Float, _ := co2.Float64()
+			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f kg CO2", activityType, co2Float))
 			pdf.Ln(6)
 		}
 		pdf.Ln(10)
@@ -119,8 +119,9 @@ func (r *PDFReportRenderer) renderFootprintPDF(pdf *gofpdf.Fpdf, data *models.Fo
 			if i >= 5 { // Limit to top 5 for PDF
 				break
 			}
-			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f kg CO2 (%d times)", 
-				activity.ActivityType, activity.TotalCO2, activity.Count))
+			totalCO2, _ := activity.TotalCO2.Float64()
+			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f kg CO2 (%d times)",
+				activity.ActivityType, totalCO2, activity.Count))
 			pdf.Ln(6)
 		}
 	}
@@ -138,8 +139,8 @@ func (r *PDFReportRenderer) renderCreditsPDF(pdf *gofpdf.Fpdf, data *models.Cred
 
 	// Report period
 	pdf.SetFont("Arial", "", 12)
-	pdf.Cell(190, 8, fmt.Sprintf("Period: %s to %s", 
-		data.StartDate.Format("2006-01-02"), 
+	pdf.Cell(190, 8, fmt.Sprintf("Period: %s to %s",
+		data.StartDate.Format("2006-01-02"),
 		data.EndDate.Format("2006-01-02")))
 	pdf.Ln(10)
 
@@ -149,11 +150,14 @@ func (r *PDFReportRenderer) renderCreditsPDF(pdf *gofpdf.Fpdf, data *models.Cred
 	pdf.Ln(10)
 
 	pdf.SetFont("Arial", "", 11)
-	pdf.Cell(190, 6, fmt.Sprintf("Current Balance: %.2f credits", data.CurrentBalance))
+	currentBalance, _ := data.CurrentBalance.Float64()
+	totalEarned, _ := data.TotalCreditsEarned.Float64()
+	totalSpent, _ := data.TotalCreditsSpent.Float64()
+	pdf.Cell(190, 6, fmt.Sprintf("Current Balance: %.2f credits", currentBalance))
 	pdf.Ln(6)
-	pdf.Cell(190, 6, fmt.Sprintf("Total Earned: %.2f credits", data.TotalCreditsEarned))
+	pdf.Cell(190, 6, fmt.Sprintf("Total Earned: %.2f credits", totalEarned))
 	pdf.Ln(6)
-	pdf.Cell(190, 6, fmt.Sprintf("Total Spent: %.2f credits", data.TotalCreditsSpent))
+	pdf.Cell(190, 6, fmt.Sprintf("Total Spent: %.2f credits", totalSpent))
 	pdf.Ln(6)
 	pdf.Cell(190, 6, fmt.Sprintf("Total Transactions: %d", data.TotalTransactions))
 	pdf.Ln(15)
@@ -166,7 +170,8 @@ func (r *PDFReportRenderer) renderCreditsPDF(pdf *gofpdf.Fpdf, data *models.Cred
 
 		pdf.SetFont("Arial", "", 11)
 		for source, credits := range data.BySource {
-			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f credits", source, credits))
+			creditsFloat, _ := credits.Float64()
+			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f credits", source, creditsFloat))
 			pdf.Ln(6)
 		}
 		pdf.Ln(10)
@@ -183,8 +188,9 @@ func (r *PDFReportRenderer) renderCreditsPDF(pdf *gofpdf.Fpdf, data *models.Cred
 			if i >= 5 { // Limit to top 5 for PDF
 				break
 			}
-			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f credits (%d times)", 
-				activity.ActivityType, activity.TotalCredits, activity.Count))
+			totalCredits, _ := activity.TotalCredits.Float64()
+			pdf.Cell(190, 6, fmt.Sprintf("%s: %.2f credits (%d times)",
+				activity.ActivityType, totalCredits, activity.Count))
 			pdf.Ln(6)
 		}
 	}
@@ -202,8 +208,8 @@ func (r *PDFReportRenderer) renderSummaryPDF(pdf *gofpdf.Fpdf, data *models.Summ
 
 	// Report period
 	pdf.SetFont("Arial", "", 12)
-	pdf.Cell(190, 8, fmt.Sprintf("Period: %s to %s", 
-		data.StartDate.Format("2006-01-02"), 
+	pdf.Cell(190, 8, fmt.Sprintf("Period: %s to %s",
+		data.StartDate.Format("2006-01-02"),
 		data.EndDate.Format("2006-01-02")))
 	pdf.Ln(15)
 
@@ -213,9 +219,11 @@ func (r *PDFReportRenderer) renderSummaryPDF(pdf *gofpdf.Fpdf, data *models.Summ
 	pdf.Ln(10)
 
 	pdf.SetFont("Arial", "", 11)
-	pdf.Cell(190, 6, fmt.Sprintf("Total CO2 Emissions: %.2f kg", data.TotalCO2Kg))
+	totalCO2, _ := data.TotalCO2Kg.Float64()
+	avgCO2PerDay, _ := data.AverageCO2PerDay.Float64()
+	pdf.Cell(190, 6, fmt.Sprintf("Total CO2 Emissions: %.2f kg", totalCO2))
 	pdf.Ln(6)
-	pdf.Cell(190, 6, fmt.Sprintf("Average CO2 per Day: %.2f kg", data.AverageCO2PerDay))
+	pdf.Cell(190, 6, fmt.Sprintf("Average CO2 per Day: %.2f kg", avgCO2PerDay))
 	pdf.Ln(6)
 	pdf.Cell(190, 6, fmt.Sprintf("Total Calculations: %d", data.TotalCalculations))
 	pdf.Ln(15)
@@ -226,13 +234,17 @@ func (r *PDFReportRenderer) renderSummaryPDF(pdf *gofpdf.Fpdf, data *models.Summ
 	pdf.Ln(10)
 
 	pdf.SetFont("Arial", "", 11)
-	pdf.Cell(190, 6, fmt.Sprintf("Current Balance: %.2f credits", data.CurrentBalance))
+	currentBalance, _ := data.CurrentBalance.Float64()
+	totalEarned, _ := data.TotalCreditsEarned.Float64()
+	totalSpent, _ := data.TotalCreditsSpent.Float64()
+	avgCreditsPerDay, _ := data.AverageCreditsPerDay.Float64()
+	pdf.Cell(190, 6, fmt.Sprintf("Current Balance: %.2f credits", currentBalance))
 	pdf.Ln(6)
-	pdf.Cell(190, 6, fmt.Sprintf("Total Earned: %.2f credits", data.TotalCreditsEarned))
+	pdf.Cell(190, 6, fmt.Sprintf("Total Earned: %.2f credits", totalEarned))
 	pdf.Ln(6)
-	pdf.Cell(190, 6, fmt.Sprintf("Total Spent: %.2f credits", data.TotalCreditsSpent))
+	pdf.Cell(190, 6, fmt.Sprintf("Total Spent: %.2f credits", totalSpent))
 	pdf.Ln(6)
-	pdf.Cell(190, 6, fmt.Sprintf("Average Credits per Day: %.2f", data.AverageCreditsPerDay))
+	pdf.Cell(190, 6, fmt.Sprintf("Average Credits per Day: %.2f", avgCreditsPerDay))
 	pdf.Ln(15)
 
 	// Activity Summary
@@ -255,15 +267,15 @@ func (r *PDFReportRenderer) renderSummaryPDF(pdf *gofpdf.Fpdf, data *models.Summ
 func (r *PDFReportRenderer) renderFootprintCSV(writer *csv.Writer, data *models.FootprintReportData) ([]byte, error) {
 	// Write headers
 	writer.Write([]string{"Metric", "Value", "Unit"})
-	
+
 	// Write summary data
 	writer.Write([]string{"Total CO2", data.TotalCO2Kg.String(), "kg"})
 	writer.Write([]string{"Total Calculations", strconv.FormatInt(data.TotalCalculations, 10), "count"})
 	writer.Write([]string{"Average per Day", data.AveragePerDay.String(), "kg/day"})
-	
+
 	// Write empty row
 	writer.Write([]string{})
-	
+
 	// Write activity breakdown
 	writer.Write([]string{"Activity Type", "CO2 Emissions", "Unit"})
 	for activityType, co2 := range data.ByActivityType {
@@ -278,16 +290,16 @@ func (r *PDFReportRenderer) renderFootprintCSV(writer *csv.Writer, data *models.
 func (r *PDFReportRenderer) renderCreditsCSV(writer *csv.Writer, data *models.CreditsReportData) ([]byte, error) {
 	// Write headers
 	writer.Write([]string{"Metric", "Value", "Unit"})
-	
+
 	// Write summary data
 	writer.Write([]string{"Current Balance", data.CurrentBalance.String(), "credits"})
 	writer.Write([]string{"Total Earned", data.TotalCreditsEarned.String(), "credits"})
 	writer.Write([]string{"Total Spent", data.TotalCreditsSpent.String(), "credits"})
 	writer.Write([]string{"Total Transactions", strconv.FormatInt(data.TotalTransactions, 10), "count"})
-	
+
 	// Write empty row
 	writer.Write([]string{})
-	
+
 	// Write credits by source
 	writer.Write([]string{"Source", "Credits Earned", "Unit"})
 	for source, credits := range data.BySource {
@@ -302,18 +314,18 @@ func (r *PDFReportRenderer) renderCreditsCSV(writer *csv.Writer, data *models.Cr
 func (r *PDFReportRenderer) renderSummaryCSV(writer *csv.Writer, data *models.SummaryReportData) ([]byte, error) {
 	// Write headers
 	writer.Write([]string{"Category", "Metric", "Value", "Unit"})
-	
+
 	// Environmental Impact
 	writer.Write([]string{"Environmental", "Total CO2", data.TotalCO2Kg.String(), "kg"})
 	writer.Write([]string{"Environmental", "Average CO2 per Day", data.AverageCO2PerDay.String(), "kg/day"})
 	writer.Write([]string{"Environmental", "Total Calculations", strconv.FormatInt(data.TotalCalculations, 10), "count"})
-	
+
 	// Carbon Credits
 	writer.Write([]string{"Credits", "Current Balance", data.CurrentBalance.String(), "credits"})
 	writer.Write([]string{"Credits", "Total Earned", data.TotalCreditsEarned.String(), "credits"})
 	writer.Write([]string{"Credits", "Total Spent", data.TotalCreditsSpent.String(), "credits"})
 	writer.Write([]string{"Credits", "Average per Day", data.AverageCreditsPerDay.String(), "credits/day"})
-	
+
 	// Activities
 	writer.Write([]string{"Activities", "Total Eco Activities", strconv.FormatInt(data.TotalActivities, 10), "count"})
 	writer.Write([]string{"Activities", "Total Transactions", strconv.FormatInt(data.TotalTransactions, 10), "count"})

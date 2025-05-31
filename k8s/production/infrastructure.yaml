@@ -1,0 +1,593 @@
+# PostgreSQL for Calculator Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: calculator-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: calculator
+    environment: production
+spec:
+  serviceName: calculator-postgres-production
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      service: calculator
+  template:
+    metadata:
+      labels:
+        app: postgres
+        service: calculator
+        environment: production
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "calculator_production"
+        - name: POSTGRES_USER
+          value: "calculator_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: calculator-db-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calculator-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: calculator
+    environment: production
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+    service: calculator
+---
+# PostgreSQL for Tracker Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tracker-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: tracker
+    environment: production
+spec:
+  serviceName: tracker-postgres-production
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      service: tracker
+  template:
+    metadata:
+      labels:
+        app: postgres
+        service: tracker
+        environment: production
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "tracker_production"
+        - name: POSTGRES_USER
+          value: "tracker_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: tracker-db-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracker-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: tracker
+    environment: production
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+    service: tracker
+---
+# Redis for Caching
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-production
+  namespace: greenledger-production
+  labels:
+    app: redis
+    environment: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        environment: production
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: external-secrets
+              key: redis-password
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-production
+  namespace: greenledger-production
+  labels:
+    app: redis
+    environment: production
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
+---
+# PostgreSQL for Wallet Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: wallet-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: wallet
+    environment: production
+spec:
+  serviceName: wallet-postgres-production
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      service: wallet
+  template:
+    metadata:
+      labels:
+        app: postgres
+        service: wallet
+        environment: production
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "wallet_production"
+        - name: POSTGRES_USER
+          value: "wallet_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: wallet-db-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wallet-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: wallet
+    environment: production
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+    service: wallet
+---
+# PostgreSQL for User Auth Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: userauth-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: userauth
+    environment: production
+spec:
+  serviceName: userauth-postgres-production
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      service: userauth
+  template:
+    metadata:
+      labels:
+        app: postgres
+        service: userauth
+        environment: production
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "userauth_production"
+        - name: POSTGRES_USER
+          value: "userauth_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: userauth-db-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userauth-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: userauth
+    environment: production
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+    service: userauth
+---
+# PostgreSQL for Reporting Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: reporting-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: reporting
+    environment: production
+spec:
+  serviceName: reporting-postgres-production
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+      service: reporting
+  template:
+    metadata:
+      labels:
+        app: postgres
+        service: reporting
+        environment: production
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "reporting_production"
+        - name: POSTGRES_USER
+          value: "reporting_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: reporting-db-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporting-postgres-production
+  namespace: greenledger-production
+  labels:
+    app: postgres
+    service: reporting
+    environment: production
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+    service: reporting
+---
+# Kafka for Messaging
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-production
+  namespace: greenledger-production
+  labels:
+    app: kafka
+    environment: production
+spec:
+  serviceName: kafka-production
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+        environment: production
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.4.0
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: "zookeeper-production:2181"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka-production:9092"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+          value: "true"
+        ports:
+        - containerPort: 9092
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /var/lib/kafka/data
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-production
+  namespace: greenledger-production
+  labels:
+    app: kafka
+    environment: production
+spec:
+  ports:
+  - port: 9092
+    targetPort: 9092
+  selector:
+    app: kafka
+---
+# Zookeeper for Kafka
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper-production
+  namespace: greenledger-production
+  labels:
+    app: zookeeper
+    environment: production
+spec:
+  serviceName: zookeeper-production
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        environment: production
+    spec:
+      containers:
+      - name: zookeeper
+        image: confluentinc/cp-zookeeper:7.4.0
+        env:
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+        ports:
+        - containerPort: 2181
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /var/lib/zookeeper/data
+        - name: zookeeper-logs
+          mountPath: /var/lib/zookeeper/log
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2Gi"
+            cpu: "200m"
+  volumeClaimTemplates:
+  - metadata:
+      name: zookeeper-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+  - metadata:
+      name: zookeeper-logs
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-production
+  namespace: greenledger-production
+  labels:
+    app: zookeeper
+    environment: production
+spec:
+  ports:
+  - port: 2181
+    targetPort: 2181
+  selector:
+    app: zookeeper

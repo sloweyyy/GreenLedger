@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/greenledger/services/reporting/internal/models"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // DatabaseDataCollector implements DataCollector using database queries
@@ -372,18 +373,18 @@ func (c *DatabaseDataCollector) CollectSummaryData(ctx context.Context, userID s
 	}
 
 	data := &models.SummaryReportData{
-		UserID:                userID,
-		TotalCO2Kg:            footprintData.TotalCO2Kg,
-		TotalCreditsEarned:    creditsData.TotalCreditsEarned,
-		TotalCreditsSpent:     creditsData.TotalCreditsSpent,
-		CurrentBalance:        creditsData.CurrentBalance,
-		TotalActivities:       totalActivities,
-		TotalCalculations:     footprintData.TotalCalculations,
-		TotalTransactions:     creditsData.TotalTransactions,
-		AverageCO2PerDay:      averageCO2PerDay,
-		AverageCreditsPerDay:  averageCreditsPerDay,
-		StartDate:             startDate,
-		EndDate:               endDate,
+		UserID:               userID,
+		TotalCO2Kg:           footprintData.TotalCO2Kg,
+		TotalCreditsEarned:   creditsData.TotalCreditsEarned,
+		TotalCreditsSpent:    creditsData.TotalCreditsSpent,
+		CurrentBalance:       creditsData.CurrentBalance,
+		TotalActivities:      totalActivities,
+		TotalCalculations:    footprintData.TotalCalculations,
+		TotalTransactions:    creditsData.TotalTransactions,
+		AverageCO2PerDay:     averageCO2PerDay,
+		AverageCreditsPerDay: averageCreditsPerDay,
+		StartDate:            startDate,
+		EndDate:              endDate,
 	}
 
 	// TODO: Calculate most/least active days

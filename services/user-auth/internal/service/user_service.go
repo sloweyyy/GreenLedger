@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/greenledger/services/user-auth/internal/models"
-	"github.com/greenledger/services/user-auth/internal/repository"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/repository"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // UserService handles user management operations
@@ -295,14 +295,7 @@ type UpdateUserRequest struct {
 	IsVerified *bool  `json:"is_verified"`
 }
 
-type UserProfileResponse struct {
-	Bio         string `json:"bio"`
-	Location    string `json:"location"`
-	Website     string `json:"website"`
-	PhoneNumber string `json:"phone_number"`
-}
-
-// Update UserResponse to include profile
+// UserResponseWithProfile is kept for backward compatibility
 type UserResponseWithProfile struct {
 	UserResponse
 	Profile *UserProfileResponse `json:"profile,omitempty"`

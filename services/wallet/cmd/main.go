@@ -11,15 +11,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/greenledger/services/wallet/internal/handler"
-	"github.com/greenledger/services/wallet/internal/models"
-	"github.com/greenledger/services/wallet/internal/repository"
-	"github.com/greenledger/services/wallet/internal/service"
-	"github.com/greenledger/shared/config"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
-	"github.com/greenledger/shared/middleware"
 	"github.com/shopspring/decimal"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/handler"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/repository"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/service"
+	"github.com/sloweyyy/GreenLedger/shared/config"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	sharedLogger "github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/middleware"
 )
 
 // @title GreenLedger Wallet Service API
@@ -55,7 +55,7 @@ func main() {
 	cfg.Server.GRPCPort = 9083
 
 	// Initialize logger
-	logger := logger.New(cfg.Server.LogLevel).WithService("wallet")
+	logger := sharedLogger.New(cfg.Server.LogLevel).WithService("wallet")
 
 	// Initialize database
 	db, err := database.NewPostgresDB(&cfg.Database, logger)
@@ -163,15 +163,15 @@ func main() {
 					_, err := walletService.CreditBalance(ctx, req)
 					if err != nil {
 						logger.LogError(ctx, "failed to credit wallet from activity", err,
-							logger.String("user_id", e.UserID),
-							logger.String("activity_id", e.ActivityID))
+							sharedLogger.String("user_id", e.UserID),
+							sharedLogger.String("activity_id", e.ActivityID))
 						return err
 					}
 
 					logger.LogInfo(ctx, "wallet credited from eco activity",
-						logger.String("user_id", e.UserID),
-						logger.String("activity_id", e.ActivityID),
-						logger.Float64("credits", e.CreditsEarned))
+						sharedLogger.String("user_id", e.UserID),
+						sharedLogger.String("activity_id", e.ActivityID),
+						sharedLogger.Float64("credits", e.CreditsEarned))
 
 					return nil
 				default:
@@ -189,8 +189,8 @@ func main() {
 	// Start server in a goroutine
 	go func() {
 		logger.LogInfo(context.Background(), "starting wallet service",
-			logger.Int("port", cfg.Server.Port),
-			logger.String("environment", cfg.Server.Environment))
+			sharedLogger.Int("port", cfg.Server.Port),
+			sharedLogger.String("environment", cfg.Server.Environment))
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.LogError(context.Background(), "failed to start server", err)

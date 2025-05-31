@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/segmentio/kafka-go"
 )
 

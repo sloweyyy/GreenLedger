@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/greenledger/services/wallet/internal/models"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )

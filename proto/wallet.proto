@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package wallet;
 
-option go_package = "github.com/greenledger/proto/wallet";
+option go_package = "github.com/sloweyyy/greenledger/proto/wallet";
 
 import "google/protobuf/timestamp.proto";
 
@@ -10,19 +10,19 @@ import "google/protobuf/timestamp.proto";
 service WalletService {
   // Get user's carbon credit balance
   rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
-  
+
   // Credit carbon credits to user's wallet
   rpc CreditBalance(CreditBalanceRequest) returns (CreditBalanceResponse);
-  
+
   // Debit carbon credits from user's wallet
   rpc DebitBalance(DebitBalanceRequest) returns (DebitBalanceResponse);
-  
+
   // Transfer credits between users
   rpc TransferCredits(TransferCreditsRequest) returns (TransferCreditsResponse);
-  
+
   // Get transaction history
   rpc GetTransactionHistory(GetTransactionHistoryRequest) returns (GetTransactionHistoryResponse);
-  
+
   // Get wallet statistics
   rpc GetWalletStats(GetWalletStatsRequest) returns (GetWalletStatsResponse);
 }

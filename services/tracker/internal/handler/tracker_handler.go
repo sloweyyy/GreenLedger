@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/greenledger/services/tracker/internal/service"
-	"github.com/greenledger/shared/logger"
-	"github.com/greenledger/shared/middleware"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/service"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/middleware"
 )
 
 // TrackerHandler handles HTTP requests for activity tracking
@@ -193,7 +193,7 @@ func (h *TrackerHandler) GetActivityByID(c *gin.Context) {
 // @Produce json
 // @Param start_date query string false "Start date (RFC3339 format)"
 // @Param end_date query string false "End date (RFC3339 format)"
-// @Success 200 {object} service.UserActivityStats
+// @Success 200 {object} models.UserActivityStats
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
@@ -263,7 +263,7 @@ func (h *TrackerHandler) GetActivityTypes(c *gin.Context) {
 // @Router /tracker/activity-types/{category} [get]
 func (h *TrackerHandler) GetActivityTypesByCategory(c *gin.Context) {
 	category := c.Param("category")
-	
+
 	// This would be implemented with ActivityTypeService
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "Get activity types by category - to be implemented",

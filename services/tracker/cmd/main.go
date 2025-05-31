@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/greenledger/services/tracker/internal/handler"
-	"github.com/greenledger/services/tracker/internal/models"
-	"github.com/greenledger/services/tracker/internal/repository"
-	"github.com/greenledger/services/tracker/internal/service"
-	"github.com/greenledger/shared/config"
-	"github.com/greenledger/shared/database"
-	"github.com/greenledger/shared/logger"
-	"github.com/greenledger/shared/middleware"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/handler"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/repository"
+	"github.com/sloweyyy/GreenLedger/services/tracker/internal/service"
+	"github.com/sloweyyy/GreenLedger/shared/config"
+	"github.com/sloweyyy/GreenLedger/shared/database"
+	sharedLogger "github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/middleware"
 )
 
 // @title GreenLedger Activity Tracker Service API
@@ -54,7 +54,7 @@ func main() {
 	cfg.Server.GRPCPort = 9082
 
 	// Initialize logger
-	logger := logger.New(cfg.Server.LogLevel).WithService("tracker")
+	logger := sharedLogger.New(cfg.Server.LogLevel).WithService("tracker")
 
 	// Initialize database
 	db, err := database.NewPostgresDB(&cfg.Database, logger)
@@ -147,8 +147,8 @@ func main() {
 	// Start server in a goroutine
 	go func() {
 		logger.LogInfo(context.Background(), "starting tracker service",
-			logger.Int("port", cfg.Server.Port),
-			logger.String("environment", cfg.Server.Environment))
+			sharedLogger.Int("port", cfg.Server.Port),
+			sharedLogger.String("environment", cfg.Server.Environment))
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.LogError(context.Background(), "failed to start server", err)
@@ -188,7 +188,7 @@ func main() {
 }
 
 // initializeActivityTypes initializes default activity types and credit rules
-func initializeActivityTypes(ctx context.Context, activityTypeRepo *repository.ActivityTypeRepository, creditRuleRepo *repository.CreditRuleRepository, logger *logger.Logger) error {
+func initializeActivityTypes(ctx context.Context, activityTypeRepo *repository.ActivityTypeRepository, creditRuleRepo *repository.CreditRuleRepository, logger *sharedLogger.Logger) error {
 	// Check if activity types already exist
 	activityTypes, err := activityTypeRepo.GetAll(ctx)
 	if err != nil {
@@ -319,7 +319,7 @@ func initializeActivityTypes(ctx context.Context, activityTypeRepo *repository.A
 	}
 
 	logger.LogInfo(ctx, "default activity types initialized successfully",
-		logger.Int("count", len(defaultActivityTypes)))
+		sharedLogger.Int("count", len(defaultActivityTypes)))
 
 	return nil
 }

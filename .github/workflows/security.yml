@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: "1.21"
+  GO_VERSION: "1.23"
 
 jobs:
   # Job 1: Static Application Security Testing (SAST)
@@ -32,9 +32,9 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: 🔒 Run gosec security scanner
-        run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-          gosec -fmt sarif -out gosec.sarif ./...
+        uses: securego/gosec@master
+        with:
+          args: "-fmt sarif -out gosec.sarif ./..."
 
       - name: 📊 Upload gosec SARIF file
         uses: github/codeql-action/upload-sarif@v3
@@ -219,6 +219,10 @@ jobs:
   secrets-scan:
     name: 🔐 Secrets Detection
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -315,17 +319,17 @@ jobs:
 
           for dockerfile in $(find . -name "Dockerfile"); do
             echo "Checking $dockerfile..."
-            
+
             # Check for non-root user
             if ! grep -q "USER" "$dockerfile"; then
               echo "⚠️ $dockerfile: Consider adding non-root USER instruction"
             fi
-            
+
             # Check for HEALTHCHECK
             if ! grep -q "HEALTHCHECK" "$dockerfile"; then
               echo "⚠️ $dockerfile: Consider adding HEALTHCHECK instruction"
             fi
-            
+
             # Check for specific versions in FROM
             if grep -q "FROM.*:latest" "$dockerfile"; then
               echo "⚠️ $dockerfile: Avoid using :latest tag in FROM instruction"
@@ -353,6 +357,10 @@ jobs:
   security-report:
     name: 📊 Generate Security Report
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     needs:
       [
         sast,

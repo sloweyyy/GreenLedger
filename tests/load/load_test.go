@@ -25,28 +25,28 @@ type LoadTestConfig struct {
 
 // TestScenario represents a test scenario
 type TestScenario struct {
-	Name        string
-	Weight      int // Percentage of requests
-	Endpoint    string
-	Method      string
-	Headers     map[string]string
-	Body        interface{}
-	Validation  func(*http.Response) error
+	Name       string
+	Weight     int // Percentage of requests
+	Endpoint   string
+	Method     string
+	Headers    map[string]string
+	Body       interface{}
+	Validation func(*http.Response) error
 }
 
 // LoadTestResult represents the results of a load test
 type LoadTestResult struct {
-	TotalRequests    int64
-	SuccessfulReqs   int64
-	FailedReqs       int64
-	AverageLatency   time.Duration
-	MinLatency       time.Duration
-	MaxLatency       time.Duration
-	P95Latency       time.Duration
-	P99Latency       time.Duration
-	RequestsPerSec   float64
-	ErrorRate        float64
-	Errors           map[string]int64
+	TotalRequests  int64
+	SuccessfulReqs int64
+	FailedReqs     int64
+	AverageLatency time.Duration
+	MinLatency     time.Duration
+	MaxLatency     time.Duration
+	P95Latency     time.Duration
+	P99Latency     time.Duration
+	RequestsPerSec float64
+	ErrorRate      float64
+	Errors         map[string]int64
 }
 
 // LoadTester handles load testing
@@ -76,7 +76,7 @@ func NewLoadTester(config LoadTestConfig) *LoadTester {
 
 // Run executes the load test
 func (lt *LoadTester) Run(ctx context.Context) (*LoadTestResult, error) {
-	fmt.Printf("Starting load test with %d concurrent users for %v\n", 
+	fmt.Printf("Starting load test with %d concurrent users for %v\n",
 		lt.config.ConcurrentUsers, lt.config.Duration)
 
 	startTime := time.Now()
@@ -90,7 +90,7 @@ func (lt *LoadTester) Run(ctx context.Context) (*LoadTestResult, error) {
 	for i := 0; i < lt.config.ConcurrentUsers; i++ {
 		wg.Add(1)
 		go lt.worker(ctx, &wg, userChan, endTime)
-		
+
 		// Ramp up gradually
 		if lt.config.RampUpTime > 0 {
 			time.Sleep(lt.config.RampUpTime / time.Duration(lt.config.ConcurrentUsers))
@@ -127,7 +127,7 @@ func (lt *LoadTester) worker(ctx context.Context, wg *sync.WaitGroup, userChan <
 	defer wg.Done()
 
 	userID := <-userChan
-	
+
 	for time.Now().Before(endTime) {
 		select {
 		case <-ctx.Done():
@@ -135,7 +135,7 @@ func (lt *LoadTester) worker(ctx context.Context, wg *sync.WaitGroup, userChan <
 		default:
 			scenario := lt.selectScenario()
 			lt.executeRequest(userID, scenario)
-			
+
 			// Small delay between requests
 			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 		}
@@ -191,7 +191,7 @@ func (lt *LoadTester) executeRequest(userID int, scenario TestScenario) {
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", fmt.Sprintf("LoadTester-User-%d", userID))
-	
+
 	for key, value := range scenario.Headers {
 		req.Header.Set(key, value)
 	}
@@ -232,7 +232,7 @@ func (lt *LoadTester) executeRequest(userID int, scenario TestScenario) {
 func (lt *LoadTester) recordError(errorType string) {
 	lt.mutex.Lock()
 	defer lt.mutex.Unlock()
-	
+
 	lt.results.FailedReqs++
 	lt.errors[errorType]++
 	lt.results.Errors[errorType]++
@@ -269,7 +269,7 @@ func (lt *LoadTester) calculateResults(totalDuration time.Duration) {
 	// Calculate percentiles
 	p95Index := int(float64(len(lt.latencies)) * 0.95)
 	p99Index := int(float64(len(lt.latencies)) * 0.99)
-	
+
 	if p95Index < len(lt.latencies) {
 		lt.results.P95Latency = lt.latencies[p95Index]
 	}

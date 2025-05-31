@@ -1,11 +1,12 @@
 package middleware
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/greenledger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // RequestLogger creates a logging middleware for Gin
@@ -48,8 +49,8 @@ func ErrorLogger(log *logger.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			for _, err := range c.Errors {
 				log.LogError(c.Request.Context(), "request error", err.Err,
-					logger.String("type", err.Type.String()),
-					logger.String("meta", err.Meta.(string)))
+					logger.String("type", fmt.Sprintf("%d", err.Type)),
+					logger.String("meta", fmt.Sprintf("%v", err.Meta)))
 			}
 		}
 	}

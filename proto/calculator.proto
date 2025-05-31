@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package calculator;
 
-option go_package = "github.com/greenledger/proto/calculator";
+option go_package = "github.com/sloweyyy/greenledger/proto/calculator";
 
 import "google/protobuf/timestamp.proto";
 
@@ -10,10 +10,10 @@ import "google/protobuf/timestamp.proto";
 service CalculatorService {
   // Calculate carbon footprint for various activities
   rpc CalculateFootprint(CalculateFootprintRequest) returns (CalculateFootprintResponse);
-  
+
   // Get calculation history for a user
   rpc GetCalculationHistory(GetCalculationHistoryRequest) returns (GetCalculationHistoryResponse);
-  
+
   // Get emission factors
   rpc GetEmissionFactors(GetEmissionFactorsRequest) returns (GetEmissionFactorsResponse);
 }
@@ -53,19 +53,19 @@ enum PurchaseCategory {
 // Activity data for calculation
 message ActivityData {
   ActivityType activity_type = 1;
-  
+
   // Vehicle travel data
   VehicleData vehicle_data = 2;
-  
+
   // Electricity usage data
   ElectricityData electricity_data = 3;
-  
+
   // Purchase data
   PurchaseData purchase_data = 4;
-  
+
   // Flight data
   FlightData flight_data = 5;
-  
+
   // Heating data
   HeatingData heating_data = 6;
 }
