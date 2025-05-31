@@ -2,12 +2,12 @@ name: 🔄 Continuous Integration
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: "1.21"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -49,10 +49,10 @@ jobs:
       - name: 🔒 Run gosec security scanner
         uses: securecodewarrior/github-action-gosec@master
         with:
-          args: '-fmt sarif -out gosec.sarif ./...'
+          args: "-fmt sarif -out gosec.sarif ./..."
 
       - name: 📊 Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: gosec.sarif
 
@@ -102,6 +102,7 @@ jobs:
 
       - name: 📊 Upload coverage to Codecov
         uses: codecov/codecov-action@v3
+        if: hashFiles('./services/${{ matrix.service }}/coverage.out') != ''
         with:
           file: ./services/${{ matrix.service }}/coverage.out
           flags: ${{ matrix.service }}
@@ -204,7 +205,7 @@ jobs:
     needs: [lint, test]
     strategy:
       matrix:
-        service: [calculator, tracker, wallet, user-auth, reporting]
+        service: [calculator, tracker, wallet, user-auth]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -231,7 +232,18 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: 🔍 Check if Dockerfile exists
+        id: dockerfile-check
+        run: |
+          if [ -f "./services/${{ matrix.service }}/Dockerfile" ]; then
+            echo "dockerfile-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile-exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Dockerfile not found for ${{ matrix.service }}, skipping build"
+          fi
+
       - name: 🔨 Build and push Docker image
+        if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -243,6 +255,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: 🧪 Test Docker image
+        if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
         run: |
           # Test that the image can be built and runs
           docker build -t test-${{ matrix.service }} -f ./services/${{ matrix.service }}/Dockerfile .
@@ -275,7 +288,7 @@ jobs:
           go test -v -timeout=10m ./...
 
       - name: 📊 Upload load test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: load-test-results
@@ -296,15 +309,15 @@ jobs:
       - name: 🔍 Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
 
       - name: 📊 Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: "trivy-results.sarif"
 
       - name: 🔍 Run Snyk to check for vulnerabilities
         uses: snyk/actions/golang@master

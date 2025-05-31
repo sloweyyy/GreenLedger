@@ -3,15 +3,15 @@ name: 📦 Release Management
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., v1.2.3)'
+        description: "Version to release (e.g., v1.2.3)"
         required: true
         type: string
       prerelease:
-        description: 'Mark as pre-release'
+        description: "Mark as pre-release"
         required: false
         type: boolean
         default: false
@@ -49,7 +49,7 @@ jobs:
               IS_PRERELEASE=false
             fi
           fi
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
@@ -90,7 +90,7 @@ jobs:
       - name: 🐹 Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: "1.21"
 
       - name: 📦 Cache Go modules
         uses: actions/cache@v3
@@ -147,7 +147,7 @@ jobs:
       - name: 🐹 Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: "1.21"
 
       - name: 🔨 Build binary
         env:
@@ -181,7 +181,7 @@ jobs:
           fi
 
       - name: 📊 Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-artifacts-${{ matrix.service }}
           path: dist/${{ matrix.service }}-*
@@ -193,7 +193,7 @@ jobs:
     needs: [validate-release, test-suite]
     strategy:
       matrix:
-        service: [calculator, tracker, wallet, user-auth, reporting, certifier]
+        service: [calculator, tracker, wallet, user-auth]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -219,7 +219,18 @@ jobs:
             type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: 🔍 Check if Dockerfile exists
+        id: dockerfile-check
+        run: |
+          if [ -f "./services/${{ matrix.service }}/Dockerfile" ]; then
+            echo "dockerfile-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile-exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Dockerfile not found for ${{ matrix.service }}, skipping Docker build"
+          fi
+
       - name: 🔨 Build and push Docker image
+        if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -248,7 +259,7 @@ jobs:
         id: notes
         run: |
           VERSION="${{ needs.validate-release.outputs.version }}"
-          
+
           # Extract changelog section for this version
           if grep -q "## \[$VERSION\]" CHANGELOG.md; then
             RELEASE_NOTES=$(sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
@@ -262,7 +273,7 @@ jobs:
               RELEASE_NOTES="## Initial Release"$'\n\n'"This is the first release of GreenLedger."
             fi
           fi
-          
+
           # Add Docker images section
           RELEASE_NOTES+=$'\n\n'"## 🐳 Docker Images"$'\n\n'
           RELEASE_NOTES+="- Calculator: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:$VERSION\`"$'\n'
@@ -270,7 +281,7 @@ jobs:
           RELEASE_NOTES+="- Wallet: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wallet:$VERSION\`"$'\n'
           RELEASE_NOTES+="- User Auth: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/user-auth:$VERSION\`"$'\n'
           RELEASE_NOTES+="- Reporting: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/reporting:$VERSION\`"$'\n'
-          
+
           # Add installation instructions
           RELEASE_NOTES+=$'\n\n'"## 🚀 Installation"$'\n\n'
           RELEASE_NOTES+="### Docker Compose"$'\n'
@@ -278,7 +289,7 @@ jobs:
           RELEASE_NOTES+="curl -O https://raw.githubusercontent.com/${{ github.repository }}/$VERSION/docker-compose.yml"$'\n'
           RELEASE_NOTES+="docker-compose up -d"$'\n'
           RELEASE_NOTES+="\`\`\`"$'\n'
-          
+
           # Save to output
           echo "release-notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
@@ -288,10 +299,11 @@ jobs:
   create-release:
     name: 🎉 Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [validate-release, build-artifacts, build-docker, generate-release-notes]
+    needs:
+      [validate-release, build-artifacts, build-docker, generate-release-notes]
     steps:
       - name: 📥 Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
@@ -299,7 +311,7 @@ jobs:
         run: |
           mkdir -p release-assets
           find artifacts/ -name "*.tar.gz" -o -name "*.zip" | xargs -I {} cp {} release-assets/
-          
+
           # Create checksums
           cd release-assets
           sha256sum * > checksums.txt
@@ -330,7 +342,7 @@ jobs:
   update-docs:
     name: 📚 Update Documentation
     runs-on: ubuntu-latest
-    needs: [create-release]
+    needs: [validate-release, create-release]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4

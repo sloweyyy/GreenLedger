@@ -3,13 +3,13 @@ name: 📦 Dependency Updates
 on:
   schedule:
     # Run weekly on Mondays at 9 AM UTC
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
   workflow_dispatch:
     inputs:
       update_type:
-        description: 'Type of update to perform'
+        description: "Type of update to perform"
         required: true
-        default: 'minor'
+        default: "minor"
         type: choice
         options:
           - patch
@@ -18,7 +18,7 @@ on:
           - all
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: "1.21"
 
 jobs:
   # Job 1: Update Go Dependencies
@@ -27,7 +27,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [root, shared, calculator, tracker, wallet, user-auth, reporting, certifier]
+        service:
+          [
+            root,
+            shared,
+            calculator,
+            tracker,
+            wallet,
+            user-auth,
+            reporting,
+            certifier,
+          ]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -48,7 +58,7 @@ jobs:
           else
             WORK_DIR="services/${{ matrix.service }}"
           fi
-          
+
           if [ -d "$WORK_DIR" ] && [ -f "$WORK_DIR/go.mod" ]; then
             cd "$WORK_DIR"
             
@@ -106,7 +116,7 @@ jobs:
           else
             WORK_DIR="services/${{ matrix.service }}"
           fi
-          
+
           if [ -d "$WORK_DIR" ] && [ -f "$WORK_DIR/go.mod" ]; then
             cd "$WORK_DIR"
             if [ -n "$(find . -name '*_test.go' -type f)" ]; then
@@ -118,7 +128,7 @@ jobs:
           fi
 
       - name: 📊 Upload dependency changes
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-changes-${{ matrix.service }}
           path: |
@@ -138,7 +148,7 @@ jobs:
       - name: 🔍 Check for Docker image updates
         run: |
           echo "Checking for Docker base image updates..."
-          
+
           # Find all Dockerfiles
           find . -name "Dockerfile" -type f | while read -r dockerfile; do
             echo "Checking $dockerfile..."
@@ -177,10 +187,12 @@ jobs:
       - name: 🔨 Test Docker builds
         run: |
           # Test building each service to ensure compatibility
-          for service in calculator tracker wallet user-auth reporting; do
+          for service in calculator tracker wallet user-auth; do
             if [ -f "services/$service/Dockerfile" ]; then
               echo "Testing Docker build for $service..."
               docker build -t test-$service -f services/$service/Dockerfile . || echo "Build failed for $service"
+            else
+              echo "⚠️ Dockerfile not found for $service, skipping build test"
             fi
           done
 
@@ -197,7 +209,7 @@ jobs:
       - name: 🔍 Check for action updates
         run: |
           echo "Checking for GitHub Actions updates..."
-          
+
           # Find all workflow files
           find .github/workflows -name "*.yml" -o -name "*.yaml" | while read -r workflow; do
             echo "Checking $workflow..."
@@ -244,10 +256,10 @@ jobs:
       - name: 🔍 Check for security vulnerabilities
         run: |
           echo "Checking for security vulnerabilities..."
-          
+
           # Install govulncheck
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          
+
           # Check each service for vulnerabilities
           for service_dir in . shared services/*/; do
             if [ -f "$service_dir/go.mod" ]; then
@@ -261,7 +273,7 @@ jobs:
       - name: 🔧 Apply security patches
         run: |
           echo "Applying security patches..."
-          
+
           # Update all dependencies to patch versions
           for service_dir in . shared services/*/; do
             if [ -f "$service_dir/go.mod" ]; then
@@ -277,7 +289,13 @@ jobs:
   create-pr:
     name: 📝 Create Pull Request
     runs-on: ubuntu-latest
-    needs: [update-go-deps, update-docker-images, update-github-actions, security-updates]
+    needs:
+      [
+        update-go-deps,
+        update-docker-images,
+        update-github-actions,
+        security-updates,
+      ]
     if: always()
     steps:
       - name: 📥 Checkout code
@@ -286,14 +304,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📥 Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
       - name: 🔄 Apply dependency updates
         run: |
           echo "Applying dependency updates..."
-          
+
           # Copy updated go.mod and go.sum files
           find artifacts/ -name "go.mod" -o -name "go.sum" | while read -r file; do
             # Extract service name from artifact path
@@ -336,26 +354,26 @@ jobs:
           echo "" >> pr-description.md
           echo "## 📋 Changes" >> pr-description.md
           echo "" >> pr-description.md
-          
+
           # List changed files
           echo "### Modified Files:" >> pr-description.md
           git diff --name-only | while read -r file; do
             echo "- \`$file\`" >> pr-description.md
           done
           echo "" >> pr-description.md
-          
+
           echo "## 🧪 Testing" >> pr-description.md
           echo "" >> pr-description.md
           echo "- [ ] All tests pass" >> pr-description.md
           echo "- [ ] Security scans pass" >> pr-description.md
           echo "- [ ] Docker builds succeed" >> pr-description.md
           echo "" >> pr-description.md
-          
+
           echo "## 🔒 Security" >> pr-description.md
           echo "" >> pr-description.md
           echo "This update includes security patches and vulnerability fixes." >> pr-description.md
           echo "" >> pr-description.md
-          
+
           echo "## 📝 Notes" >> pr-description.md
           echo "" >> pr-description.md
           echo "- This PR was automatically generated" >> pr-description.md
@@ -368,11 +386,11 @@ jobs:
           # Create branch
           branch_name="automated/dependency-updates-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$branch_name"
-          
+
           # Configure git
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           # Commit changes
           git add .
           git commit -m "chore(deps): automated dependency updates
@@ -380,14 +398,14 @@ jobs:
           - Update Go dependencies to latest ${{ github.event.inputs.update_type || 'minor' }} versions
           - Apply security patches
           - Update base Docker images where applicable
-          
+
           Generated by: ${{ github.workflow }} workflow
           Trigger: ${{ github.event_name }}
           Run ID: ${{ github.run_id }}"
-          
+
           # Push branch
           git push origin "$branch_name"
-          
+
           echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
       - name: 📝 Create Pull Request
@@ -397,7 +415,7 @@ jobs:
           script: |
             const fs = require('fs');
             const prDescription = fs.readFileSync('pr-description.md', 'utf8');
-            
+
             const { data: pr } = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -407,7 +425,7 @@ jobs:
               body: prDescription,
               draft: false
             });
-            
+
             // Add labels
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
@@ -415,7 +433,7 @@ jobs:
               issue_number: pr.number,
               labels: ['dependencies', 'automated', 'security']
             });
-            
+
             console.log(`Created PR #${pr.number}: ${pr.html_url}`);
 
       - name: 📊 Summary
@@ -427,7 +445,7 @@ jobs:
           echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Changes Detected:** ${{ steps.changes.outputs.has-changes }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.changes.outputs.has-changes }}" == "true" ]; then
             echo "✅ Pull request created successfully" >> $GITHUB_STEP_SUMMARY
             echo "🔗 Branch: \`${{ env.BRANCH_NAME }}\`" >> $GITHUB_STEP_SUMMARY

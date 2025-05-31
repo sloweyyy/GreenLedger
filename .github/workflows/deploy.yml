@@ -2,14 +2,14 @@ name: 🚀 Deploy to Production
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         required: true
-        default: 'staging'
+        default: "staging"
         type: choice
         options:
           - staging
@@ -27,7 +27,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
-        service: [calculator, tracker, wallet, user-auth, reporting, certifier]
+        service: [calculator, tracker, wallet, user-auth]
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-tag: ${{ steps.meta.outputs.tags }}
@@ -98,7 +98,7 @@ jobs:
       - name: 🔧 Configure kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: "latest"
 
       - name: 🔐 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -133,10 +133,10 @@ jobs:
         run: |
           # Wait for services to be ready
           sleep 30
-          
+
           # Get staging URL
           STAGING_URL=$(kubectl get service api-gateway --namespace=greenledger-staging -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          
+
           # Run basic health checks
           curl -f http://$STAGING_URL/health || exit 1
           curl -f http://$STAGING_URL/api/v1/calculator/health || exit 1
@@ -170,7 +170,7 @@ jobs:
       - name: 🔧 Configure kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: "latest"
 
       - name: 🔐 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -191,7 +191,7 @@ jobs:
           else
             VERSION=${{ github.sha }}
           fi
-          
+
           # Update Kubernetes manifests with new image tags
           sed -i "s|image: .*calculator.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:${VERSION}|g" k8s/production/calculator-deployment.yaml
           sed -i "s|image: .*tracker.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tracker:${VERSION}|g" k8s/production/tracker-deployment.yaml
@@ -212,10 +212,10 @@ jobs:
         run: |
           # Wait for services to be ready
           sleep 60
-          
+
           # Get production URL
           PRODUCTION_URL=$(kubectl get service api-gateway --namespace=greenledger-production -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          
+
           # Run comprehensive health checks
           curl -f https://$PRODUCTION_URL/health || exit 1
           curl -f https://$PRODUCTION_URL/api/v1/calculator/health || exit 1
@@ -247,16 +247,16 @@ jobs:
           release_name: Release ${{ github.ref }}
           body: |
             ## 🚀 What's New in ${{ github.ref }}
-            
+
             This release includes the latest features and improvements to GreenLedger.
-            
+
             ### 📦 Docker Images
             - Calculator Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/calculator:${{ github.ref }}`
             - Tracker Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tracker:${{ github.ref }}`
             - Wallet Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wallet:${{ github.ref }}`
             - User Auth Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/user-auth:${{ github.ref }}`
             - Reporting Service: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/reporting:${{ github.ref }}`
-            
+
             ### 🔗 Links
             - [Production Environment](https://greenledger.com)
             - [API Documentation](https://greenledger.com/docs)
@@ -277,7 +277,7 @@ jobs:
       - name: 🔧 Configure kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: "latest"
 
       - name: 🔐 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -304,7 +304,7 @@ jobs:
           kubectl rollout undo deployment/wallet-service --namespace=${{ env.NAMESPACE }}
           kubectl rollout undo deployment/user-auth-service --namespace=${{ env.NAMESPACE }}
           kubectl rollout undo deployment/reporting-service --namespace=${{ env.NAMESPACE }}
-          
+
           # Wait for rollback to complete
           kubectl rollout status deployment/calculator-service --namespace=${{ env.NAMESPACE }} --timeout=300s
           kubectl rollout status deployment/tracker-service --namespace=${{ env.NAMESPACE }} --timeout=300s
