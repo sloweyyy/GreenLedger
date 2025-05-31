@@ -7,9 +7,9 @@ toolchain go1.24.2
 require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.1
-	github.com/greenledger/shared v0.0.0
 	github.com/segmentio/kafka-go v0.4.44
 	github.com/shopspring/decimal v1.3.1
+	github.com/sloweyyy/GreenLedger/shared v0.0.0
 	gorm.io/gorm v1.25.5
 )
 
@@ -52,4 +52,4 @@ require (
 	gorm.io/driver/postgres v1.5.3 // indirect
 )
 
-replace github.com/greenledger/shared => ../../shared
+replace github.com/sloweyyy/GreenLedger/shared => ../../shared

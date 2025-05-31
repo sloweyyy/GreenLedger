@@ -295,14 +295,7 @@ type UpdateUserRequest struct {
 	IsVerified *bool  `json:"is_verified"`
 }
 
-type UserProfileResponse struct {
-	Bio         string `json:"bio"`
-	Location    string `json:"location"`
-	Website     string `json:"website"`
-	PhoneNumber string `json:"phone_number"`
-}
-
-// Update UserResponse to include profile
+// UserResponseWithProfile is kept for backward compatibility
 type UserResponseWithProfile struct {
 	UserResponse
 	Profile *UserProfileResponse `json:"profile,omitempty"`

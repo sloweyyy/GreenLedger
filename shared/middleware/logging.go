@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,8 +49,8 @@ func ErrorLogger(log *logger.Logger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			for _, err := range c.Errors {
 				log.LogError(c.Request.Context(), "request error", err.Err,
-					logger.String("type", err.Type.String()),
-					logger.String("meta", err.Meta.(string)))
+					logger.String("type", fmt.Sprintf("%d", err.Type)),
+					logger.String("meta", fmt.Sprintf("%v", err.Meta)))
 			}
 		}
 	}

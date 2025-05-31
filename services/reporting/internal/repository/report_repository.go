@@ -242,7 +242,7 @@ func (r *ReportRepository) CleanupExpiredReports(ctx context.Context, batchSize 
 	}
 
 	r.logger.LogInfo(ctx, "cleaned up expired reports",
-		logger.Int64("count", result.RowsAffected))
+		logger.String("count", fmt.Sprintf("%d", result.RowsAffected)))
 
 	return result.RowsAffected, nil
 }

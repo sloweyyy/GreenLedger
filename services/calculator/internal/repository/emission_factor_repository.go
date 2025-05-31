@@ -68,11 +68,11 @@ func (r *EmissionFactorRepository) GetByActivityTypeAndLocation(ctx context.Cont
 	var factors []*models.EmissionFactor
 
 	query := r.db.WithContext(ctx).Where("activity_type = ?", activityType)
-	
+
 	if location != "" {
 		// Try to find location-specific factors first, then fall back to global
 		query = query.Where("location = ? OR location = '' OR location IS NULL", location).
-			Order("CASE WHEN location = ? THEN 0 ELSE 1 END, sub_type", location)
+			Order(fmt.Sprintf("CASE WHEN location = '%s' THEN 0 ELSE 1 END, sub_type", location))
 	} else {
 		query = query.Order("sub_type")
 	}
