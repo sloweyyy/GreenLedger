@@ -7,6 +7,7 @@ All critical components have been successfully implemented and the system is rea
 ### **🎯 Completed Components**
 
 #### **1. Microservices (6/6 Complete)**
+
 - ✅ **Calculator Service** - Carbon footprint calculations
 - ✅ **Tracker Service** - Activity tracking and credit earning
 - ✅ **Wallet Service** - Credit balance management
@@ -15,6 +16,7 @@ All critical components have been successfully implemented and the system is rea
 - ✅ **Certificate Service** - Carbon offset certificates
 
 #### **2. Infrastructure (Complete)**
+
 - ✅ **API Gateway** - Nginx-based routing and load balancing
 - ✅ **Database Layer** - PostgreSQL per service (6 databases)
 - ✅ **Message Queue** - Kafka event streaming
@@ -23,6 +25,7 @@ All critical components have been successfully implemented and the system is rea
 - ✅ **Containerization** - Docker + Docker Compose
 
 #### **3. Development Tools (Complete)**
+
 - ✅ **Build System** - Comprehensive Makefile
 - ✅ **Testing** - Unit tests, integration tests, load tests
 - ✅ **Documentation** - API docs, README, contributing guides
@@ -33,6 +36,7 @@ All critical components have been successfully implemented and the system is rea
 ### **Prerequisites**
 
 1. **Docker Desktop** - Must be running
+
    ```bash
    # Check if Docker is running
    docker --version
@@ -77,26 +81,29 @@ curl http://localhost:8086/health
 ## 🌐 **ACCESS POINTS**
 
 ### **API Gateway & Services**
-- **API Gateway**: http://localhost:8080
-- **Calculator Service**: http://localhost:8081
-- **Tracker Service**: http://localhost:8082
-- **Wallet Service**: http://localhost:8083
-- **User Auth Service**: http://localhost:8084
-- **Reporting Service**: http://localhost:8085
-- **Certificate Service**: http://localhost:8086
+
+- **API Gateway**: <http://localhost:8080>
+- **Calculator Service**: <http://localhost:8081>
+- **Tracker Service**: <http://localhost:8082>
+- **Wallet Service**: <http://localhost:8083>
+- **User Auth Service**: <http://localhost:8084>
+- **Reporting Service**: <http://localhost:8085>
+- **Certificate Service**: <http://localhost:8086>
 
 ### **API Documentation**
-- **Calculator**: http://localhost:8081/swagger/index.html
-- **Tracker**: http://localhost:8082/swagger/index.html
-- **Wallet**: http://localhost:8083/swagger/index.html
-- **User Auth**: http://localhost:8084/swagger/index.html
-- **Reporting**: http://localhost:8085/swagger/index.html
-- **Certificate**: http://localhost:8086/swagger/index.html
+
+- **Calculator**: <http://localhost:8081/swagger/index.html>
+- **Tracker**: <http://localhost:8082/swagger/index.html>
+- **Wallet**: <http://localhost:8083/swagger/index.html>
+- **User Auth**: <http://localhost:8084/swagger/index.html>
+- **Reporting**: <http://localhost:8085/swagger/index.html>
+- **Certificate**: <http://localhost:8086/swagger/index.html>
 
 ### **Monitoring & Management**
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Traefik Dashboard**: http://localhost:8090
+
+- **Prometheus**: <http://localhost:9090>
+- **Grafana**: <http://localhost:3000> (admin/admin)
+- **Traefik Dashboard**: <http://localhost:8090>
 
 ## 🧪 **TESTING THE SYSTEM**
 
@@ -173,6 +180,7 @@ cd services/wallet && go test ./...
 ## 🔧 **DEVELOPMENT COMMANDS**
 
 ### **Service Management**
+
 ```bash
 make help           # Show all commands
 make build          # Build all services
@@ -182,6 +190,7 @@ make clean          # Clean build artifacts
 ```
 
 ### **Docker Management**
+
 ```bash
 make docker-up      # Start all services
 make docker-down    # Stop all services
@@ -192,6 +201,7 @@ make docker-ps      # Show container status
 ```
 
 ### **Individual Service Logs**
+
 ```bash
 docker-compose logs -f calculator-service
 docker-compose logs -f tracker-service
@@ -206,12 +216,14 @@ docker-compose logs -f certifier-service
 ### **Common Issues**
 
 1. **Docker not running**
+
    ```bash
    # Start Docker Desktop application
    # Or on Linux: sudo systemctl start docker
    ```
 
 2. **Port conflicts**
+
    ```bash
    # Check what's using ports
    lsof -i :8080
@@ -221,6 +233,7 @@ docker-compose logs -f certifier-service
    ```
 
 3. **Database connection issues**
+
    ```bash
    # Check database health
    docker-compose ps
@@ -231,6 +244,7 @@ docker-compose logs -f certifier-service
    ```
 
 4. **Service startup failures**
+
    ```bash
    # Check service logs
    docker-compose logs service-name
@@ -240,6 +254,7 @@ docker-compose logs -f certifier-service
    ```
 
 ### **Reset System**
+
 ```bash
 # Complete system reset
 make docker-clean
@@ -250,12 +265,14 @@ make quick-start
 ## 📈 **PERFORMANCE EXPECTATIONS**
 
 ### **System Capacity**
+
 - **Concurrent Users**: 1000+
 - **Requests/Second**: 500+
 - **Database**: 1M+ records per service
 - **Response Time**: <200ms (95th percentile)
 
 ### **Resource Usage**
+
 - **RAM**: ~4GB total (all services)
 - **CPU**: ~2 cores under load
 - **Disk**: ~2GB (databases + logs)

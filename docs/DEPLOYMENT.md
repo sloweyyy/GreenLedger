@@ -3,12 +3,14 @@
 ## Prerequisites
 
 ### Local Development Setup
+
 - Go 1.21+
 - Docker & Docker Compose
 - PostgreSQL client (for manual DB operations)
 - Make (for build automation)
 
 ### Production
+
 - Kubernetes cluster (1.25+)
 - kubectl configured
 - Helm 3.x (optional, for package management)
@@ -17,6 +19,7 @@
 ## Local Development Setup
 
 ### 1. Clone and Setup
+
 ```bash
 git clone https://github.com/sloweyyy/GreenLedger.git
 cd GreenLedger
@@ -26,7 +29,9 @@ go mod download
 ```
 
 ### 2. Environment Configuration
+
 Create `.env` file in the root directory:
+
 ```bash
 # Database Configuration
 DB_HOST=localhost
@@ -63,6 +68,7 @@ ENVIRONMENT=development
 ```
 
 ### 3. Start Infrastructure Services
+
 ```bash
 # Start PostgreSQL, Redis, and Kafka
 docker-compose up -d postgres-calculator postgres-tracker postgres-wallet postgres-userauth redis kafka
@@ -75,6 +81,7 @@ docker-compose ps
 ```
 
 ### 4. Run Database Migrations
+
 ```bash
 # Run migrations for all services
 make migrate-up
@@ -89,6 +96,7 @@ cd services/user-auth && migrate -path migrations -database "postgres://postgres
 ### 5. Start Services
 
 #### Option A: Using Make (Recommended)
+
 ```bash
 # Start all services
 make run-all
@@ -100,6 +108,7 @@ make run-wallet
 ```
 
 #### Option B: Manual Start
+
 ```bash
 # Terminal 1: Calculator Service
 cd services/calculator
@@ -115,6 +124,7 @@ go run cmd/main.go
 ```
 
 ### 6. Verify Deployment
+
 ```bash
 # Test calculator service
 curl http://localhost:8081/health
@@ -129,6 +139,7 @@ open http://localhost:8081/swagger
 ## Docker Deployment
 
 ### 1. Build Docker Images
+
 ```bash
 # Build all services
 make docker-build
@@ -140,6 +151,7 @@ docker build -t greenledger/wallet:latest -f services/wallet/Dockerfile .
 ```
 
 ### 2. Start with Docker Compose
+
 ```bash
 # Start all services with Docker Compose
 docker-compose up -d
@@ -152,6 +164,7 @@ docker-compose logs -f calculator-service
 ```
 
 ### 3. Scale Services
+
 ```bash
 # Scale calculator service
 docker-compose up -d --scale calculator-service=3
@@ -165,7 +178,8 @@ docker-compose -f docker-compose.yml -f docker-compose.scale.yml up -d
 ### 1. Prepare Kubernetes Manifests
 
 Create `k8s/` directory structure:
-```
+
+```bash
 k8s/
 ├── namespace.yaml
 ├── configmaps/
@@ -181,6 +195,7 @@ k8s/
 ```
 
 ### 2. Create Namespace
+
 ```yaml
 # k8s/namespace.yaml
 apiVersion: v1
@@ -192,6 +207,7 @@ metadata:
 ```
 
 ### 3. Database Deployment
+
 ```yaml
 # k8s/databases/postgres-calculator.yaml
 apiVersion: apps/v1
@@ -239,6 +255,7 @@ spec:
 ```
 
 ### 4. Service Deployment
+
 ```yaml
 # k8s/services/calculator/deployment.yaml
 apiVersion: apps/v1
@@ -305,6 +322,7 @@ spec:
 ```
 
 ### 5. Deploy to Kubernetes
+
 ```bash
 # Create namespace
 kubectl apply -f k8s/namespace.yaml
@@ -333,6 +351,7 @@ kubectl get services -n greenledger
 ```
 
 ### 6. Configure Ingress
+
 ```yaml
 # k8s/ingress/ingress.yaml
 apiVersion: networking.k8s.io/v1
@@ -371,6 +390,7 @@ spec:
 ## Monitoring Setup
 
 ### 1. Prometheus Configuration
+
 ```bash
 # Deploy Prometheus
 kubectl apply -f k8s/monitoring/prometheus/
@@ -380,6 +400,7 @@ kubectl apply -f k8s/monitoring/servicemonitors/
 ```
 
 ### 2. Grafana Setup
+
 ```bash
 # Deploy Grafana
 kubectl apply -f k8s/monitoring/grafana/
@@ -393,6 +414,7 @@ kubectl create configmap grafana-dashboards \
 ## Security Configuration
 
 ### 1. Network Policies
+
 ```yaml
 # k8s/security/network-policy.yaml
 apiVersion: networking.k8s.io/v1
@@ -418,6 +440,7 @@ spec:
 ```
 
 ### 2. Pod Security Standards
+
 ```yaml
 # k8s/security/pod-security-policy.yaml
 apiVersion: policy/v1beta1
@@ -447,6 +470,7 @@ spec:
 ## Backup and Recovery
 
 ### 1. Database Backup
+
 ```bash
 # Create backup job
 kubectl create job postgres-backup-$(date +%Y%m%d) \
@@ -459,6 +483,7 @@ kubectl exec -it postgres-calculator-0 -n greenledger -- \
 ```
 
 ### 2. Disaster Recovery
+
 ```bash
 # Restore from backup
 kubectl exec -i postgres-calculator-0 -n greenledger -- \
@@ -470,6 +495,7 @@ kubectl exec -i postgres-calculator-0 -n greenledger -- \
 ### Common Issues
 
 #### 1. Service Not Starting
+
 ```bash
 # Check pod logs
 kubectl logs -f deployment/calculator-service -n greenledger
@@ -482,6 +508,7 @@ kubectl top pods -n greenledger
 ```
 
 #### 2. Database Connection Issues
+
 ```bash
 # Test database connectivity
 kubectl exec -it postgres-calculator-0 -n greenledger -- \
@@ -492,6 +519,7 @@ kubectl logs -f postgres-calculator-0 -n greenledger
 ```
 
 #### 3. Performance Issues
+
 ```bash
 # Check resource limits
 kubectl describe pod calculator-service-xxx -n greenledger
@@ -502,6 +530,7 @@ open http://localhost:9090
 ```
 
 ### Health Checks
+
 ```bash
 # Service health
 curl http://api.greenledger.com/calculator/health
@@ -519,6 +548,7 @@ kubectl get ingress -n greenledger
 ## Scaling
 
 ### Horizontal Pod Autoscaler
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -548,6 +578,7 @@ spec:
 ```
 
 ### Vertical Pod Autoscaler
+
 ```yaml
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler

@@ -30,7 +30,7 @@ type TestScenario struct {
 	Endpoint   string
 	Method     string
 	Headers    map[string]string
-	Body       interface{}
+	Body       any
 	Validation func(*http.Response) error
 }
 
@@ -202,7 +202,13 @@ func (lt *LoadTester) executeRequest(userID int, scenario TestScenario) {
 		lt.recordError("network_error")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Log the error but don't fail the test since this is cleanup
+			// In a real application, you might want to log this properly
+			_ = closeErr
+		}
+	}()
 
 	latency := time.Since(startTime)
 
@@ -300,7 +306,7 @@ func TestGreenLedgerLoadTest(t *testing.T) {
 				Headers: map[string]string{
 					"Authorization": "Bearer test-token",
 				},
-				Body: map[string]interface{}{
+				Body: map[string]any{
 					"activity_type": "vehicle",
 					"distance":      100.0,
 					"fuel_type":     "gasoline",
@@ -320,7 +326,7 @@ func TestGreenLedgerLoadTest(t *testing.T) {
 				Headers: map[string]string{
 					"Authorization": "Bearer test-token",
 				},
-				Body: map[string]interface{}{
+				Body: map[string]any{
 					"activity_type": "biking",
 					"distance":      10.0,
 					"description":   "Biked to work",
@@ -352,7 +358,7 @@ func TestGreenLedgerLoadTest(t *testing.T) {
 				Headers: map[string]string{
 					"Authorization": "Bearer test-token",
 				},
-				Body: map[string]interface{}{
+				Body: map[string]any{
 					"type":       "summary",
 					"format":     "json",
 					"start_date": "2024-01-01T00:00:00Z",

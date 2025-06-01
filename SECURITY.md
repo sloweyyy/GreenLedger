@@ -1,4 +1,4 @@
-# Security Policy
+# 🔒 Security Policy
 
 ## Supported Versions
 
@@ -52,18 +52,21 @@ When reporting a vulnerability, please include:
 ### For Users
 
 #### Authentication & Authorization
+
 - Use strong, unique passwords
 - Enable two-factor authentication when available
 - Regularly rotate API keys and tokens
 - Follow the principle of least privilege for user roles
 
 #### Data Protection
+
 - Use HTTPS for all communications
 - Encrypt sensitive data at rest
 - Regularly backup your data
 - Monitor access logs for suspicious activity
 
 #### Infrastructure Security
+
 - Keep Docker images and dependencies updated
 - Use secure network configurations
 - Implement proper firewall rules
@@ -72,6 +75,7 @@ When reporting a vulnerability, please include:
 ### For Developers
 
 #### Secure Coding Practices
+
 - Validate all input data
 - Use parameterized queries to prevent SQL injection
 - Implement proper error handling (don't expose sensitive information)
@@ -79,12 +83,14 @@ When reporting a vulnerability, please include:
 - Follow OWASP security guidelines
 
 #### Dependencies
+
 - Regularly update dependencies
 - Use dependency scanning tools
 - Monitor for known vulnerabilities
 - Pin dependency versions in production
 
 #### API Security
+
 - Implement rate limiting
 - Use proper authentication and authorization
 - Validate and sanitize all inputs
@@ -94,18 +100,21 @@ When reporting a vulnerability, please include:
 ## Security Features
 
 ### Authentication & Authorization
+
 - **JWT-based authentication** with configurable expiration
 - **Role-based access control (RBAC)** with granular permissions
 - **Session management** with secure token handling
 - **Password hashing** using bcrypt with salt
 
 ### Data Protection
+
 - **Input validation** on all API endpoints
 - **SQL injection prevention** through GORM ORM
 - **XSS protection** through proper output encoding
 - **CSRF protection** for state-changing operations
 
 ### Infrastructure Security
+
 - **TLS encryption** for all communications
 - **Secure headers** middleware
 - **Rate limiting** to prevent abuse
@@ -113,6 +122,7 @@ When reporting a vulnerability, please include:
 - **Audit logging** for security events
 
 ### Container Security
+
 - **Non-root containers** for all services
 - **Minimal base images** (Alpine Linux)
 - **Security scanning** in CI/CD pipeline
@@ -138,6 +148,7 @@ We follow a coordinated disclosure process:
 - **Low**: 180 days after initial report
 
 We may request an extension if:
+
 - The fix is complex and requires more time
 - The vulnerability affects multiple systems
 - Coordinating with other vendors is necessary
@@ -153,29 +164,36 @@ We believe in recognizing security researchers who help improve our security:
 ## Security Contacts
 
 ### Security Team
+
 - **Lead Security Engineer**: [truonglevinhphuc2006@gmail.com](mailto:truonglevinhphuc2006@gmail.com)
 - **Development Team**: [truonglevinhphuc2006@gmail.com](mailto:truonglevinhphuc2006@gmail.com)
 
 ### Emergency Contact
+
 For critical security issues requiring immediate attention:
+
 - **Email**: [truonglevinhphuc2006@gmail.com](mailto:truonglevinhphuc2006@gmail.com) (monitored 24/7 for critical issues)
 - **GitHub Security Advisory**: Use GitHub's private vulnerability reporting feature
 
 ## Security Resources
 
 ### Documentation
+
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Go Security Checklist](https://github.com/securego/gosec)
 - [Docker Security Best Practices](https://docs.docker.com/engine/security/)
 
 ### Tools We Use
+
 - **Static Analysis**: gosec, golangci-lint
 - **Dependency Scanning**: Snyk, GitHub Dependabot
 - **Container Scanning**: Trivy, Clair
 - **Dynamic Testing**: OWASP ZAP
 
 ### Security Audits
+
 We conduct regular security audits:
+
 - **Internal audits**: Quarterly
 - **External audits**: Annually
 - **Penetration testing**: Bi-annually
@@ -183,6 +201,7 @@ We conduct regular security audits:
 ## Compliance
 
 GreenLedger is designed to comply with:
+
 - **GDPR** (General Data Protection Regulation)
 - **SOC 2 Type II** (in progress)
 - **ISO 27001** (planned)
@@ -190,11 +209,13 @@ GreenLedger is designed to comply with:
 ## Security Updates
 
 ### Notification Channels
+
 - **Security Advisories**: GitHub Security Advisories
 - **GitHub Releases**: Security updates included in release notes
 - **GitHub Watch**: Subscribe to repository notifications for security updates
 
 ### Update Process
+
 1. **Security patch** developed and tested
 2. **Advisory published** with details
 3. **Automated updates** for critical issues
