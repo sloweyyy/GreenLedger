@@ -1,0 +1,12 @@
+go 1.23
+
+use (
+	.
+	./services/calculator
+	./services/certifier
+	./services/reporting
+	./services/tracker
+	./services/user-auth
+	./services/wallet
+	./shared
+)

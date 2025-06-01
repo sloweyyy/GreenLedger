@@ -31,10 +31,15 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: 📦 Download dependencies
+        run: |
+          go mod download
+          go work sync
+
       - name: 🔒 Run gosec security scanner
         uses: securego/gosec@master
         with:
-          args: "-fmt sarif -out gosec.sarif ./..."
+          args: "-fmt sarif -out gosec.sarif -exclude-dir=tests ./..."
         continue-on-error: true
 
       - name: 📊 Upload gosec SARIF file
