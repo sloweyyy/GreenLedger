@@ -149,32 +149,10 @@ linters-settings:
 
   # Gocritic settings
   gocritic:
-    # Which checks should be enabled; can't be combined with 'disabled-checks'
+    # Enable additional checks beyond the default ones
     enabled-checks:
-      - argOrder
-      - badCond
-      - caseOrder
-      - codegenComment
       - commentedOutCode
-      - deprecatedComment
-      - dupArg
-      - dupBranch
-      - dupCase
-      - dupSubExpr
-      - exitAfterDefer
-      - flagDeref
-      - flagName
       - nilValReturn
-      - offBy1
-      - regexpMust
-      - sloppyLen
-      - switchTrue
-      - typeSwitchVar
-      - underef
-      - unlambda
-      - unslice
-      - valSwap
-      - wrapperFunc
 
   # Godox settings
   godox:
@@ -277,7 +255,7 @@ issues:
 
   # The list of ids of default excludes to include or disable
   include:
-    - EXC0002 # disable excluding of issues about comments from golint
+    - EXC0002 # disable excluding of issues about comments from revive
 
   # Maximum issues count per one linter
   max-issues-per-linter: 50
