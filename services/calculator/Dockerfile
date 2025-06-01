@@ -9,8 +9,13 @@ WORKDIR /app
 
 # Copy workspace and module files
 COPY go.work go.mod go.sum ./
-COPY services/calculator/go.mod services/calculator/go.sum ./services/calculator/
 COPY shared/go.mod shared/go.sum ./shared/
+COPY services/calculator/go.mod services/calculator/go.sum ./services/calculator/
+COPY services/certifier/go.mod services/certifier/go.sum ./services/certifier/
+COPY services/reporting/go.mod services/reporting/go.sum ./services/reporting/
+COPY services/tracker/go.mod services/tracker/go.sum ./services/tracker/
+COPY services/user-auth/go.mod services/user-auth/go.sum ./services/user-auth/
+COPY services/wallet/go.mod services/wallet/go.sum ./services/wallet/
 
 # Copy shared module source
 COPY shared/ ./shared/
