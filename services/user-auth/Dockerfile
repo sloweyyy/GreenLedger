@@ -7,19 +7,23 @@ RUN apk add --no-cache git ca-certificates
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum ./
+# Copy workspace and module files
+COPY go.work go.mod go.sum ./
 COPY services/user-auth/go.mod services/user-auth/go.sum ./services/user-auth/
+COPY shared/go.mod shared/go.sum ./shared/
 
-# Copy shared module
+# Copy shared module source
 COPY shared/ ./shared/
 
-# Download dependencies
-WORKDIR /app/services/user-auth
-RUN go mod download
+# Copy service source code
+COPY services/user-auth/ ./services/user-auth/
 
-# Copy source code
-COPY services/user-auth/ ./
+# Set working directory to service
+WORKDIR /app/services/user-auth
+
+# Download dependencies with workspace support
+ENV GOWORK=/app/go.work
+RUN go mod download
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go

@@ -7,12 +7,14 @@ RUN apk add --no-cache git ca-certificates tzdata
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum ./
+# Copy workspace and module files
+COPY go.work go.mod go.sum ./
+COPY shared/go.mod shared/go.sum ./shared/
 COPY shared/ ./shared/
 COPY services/certifier/go.mod services/certifier/go.sum ./services/certifier/
 
-# Download dependencies
+# Download dependencies with workspace support
+ENV GOWORK=/app/go.work
 RUN cd services/certifier && go mod download
 
 # Copy source code

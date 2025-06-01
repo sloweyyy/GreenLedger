@@ -7,19 +7,23 @@ RUN apk add --no-cache git ca-certificates
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum ./
+# Copy workspace and module files
+COPY go.work go.mod go.sum ./
 COPY services/wallet/go.mod services/wallet/go.sum ./services/wallet/
+COPY shared/go.mod shared/go.sum ./shared/
 
-# Copy shared module
+# Copy shared module source
 COPY shared/ ./shared/
 
-# Download dependencies
-WORKDIR /app/services/wallet
-RUN go mod download
+# Copy service source code
+COPY services/wallet/ ./services/wallet/
 
-# Copy source code
-COPY services/wallet/ ./
+# Set working directory to service
+WORKDIR /app/services/wallet
+
+# Download dependencies with workspace support
+ENV GOWORK=/app/go.work
+RUN go mod download
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go

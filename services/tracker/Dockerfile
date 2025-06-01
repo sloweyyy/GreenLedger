@@ -7,19 +7,23 @@ RUN apk add --no-cache git ca-certificates
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum ./
+# Copy workspace and module files
+COPY go.work go.mod go.sum ./
 COPY services/tracker/go.mod services/tracker/go.sum ./services/tracker/
+COPY shared/go.mod shared/go.sum ./shared/
 
-# Copy shared module
+# Copy shared module source
 COPY shared/ ./shared/
 
-# Download dependencies
-WORKDIR /app/services/tracker
-RUN go mod download
+# Copy service source code
+COPY services/tracker/ ./services/tracker/
 
-# Copy source code
-COPY services/tracker/ ./
+# Set working directory to service
+WORKDIR /app/services/tracker
+
+# Download dependencies with workspace support
+ENV GOWORK=/app/go.work
+RUN go mod download
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
