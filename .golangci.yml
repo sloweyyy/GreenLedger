@@ -79,8 +79,8 @@ linters-settings:
     # Put imports beginning with prefix after 3rd-party packages
     local-prefixes: github.com/sloweyyy/GreenLedger
 
-  # Golint settings
-  golint:
+  # Revive settings (replacement for golint)
+  revive:
     # Minimal confidence for issues
     min-confidence: 0.8
 
@@ -215,7 +215,7 @@ linters:
     - ineffassign
     - misspell
     - nakedret
-    - shadow
+    - revive
     - staticcheck
     - stylecheck
     - typecheck
