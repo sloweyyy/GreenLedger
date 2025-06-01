@@ -121,8 +121,8 @@ mocks/
 # Vendor directory
 vendor/
 
-# Go workspace file
-go.work
+# Go workspace file (commented out to include in Docker builds)
+# go.work
 
 # Test coverage
 *.out

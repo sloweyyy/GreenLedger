@@ -31,10 +31,15 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: 📦 Download dependencies
+        run: |
+          go mod download
+          go work sync
+
       - name: 🔒 Run gosec security scanner
         uses: securego/gosec@master
         with:
-          args: "-fmt sarif -out gosec.sarif ./..."
+          args: "-fmt sarif -out gosec.sarif -exclude-dir=tests ./..."
         continue-on-error: true
 
       - name: 📊 Upload gosec SARIF file
@@ -174,22 +179,23 @@ jobs:
           severity-cutoff: high
         continue-on-error: true
 
-      - name: 🔍 Run Docker Scout
-        if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: "security-scan:${{ matrix.service }}"
-          sarif-file: "scout-${{ matrix.service }}.sarif"
-          summary: true
-        continue-on-error: true
+      # Docker Scout removed - redundant with Trivy and Grype scanning
+      # - name: 🔍 Run Docker Scout
+      #   if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
+      #   uses: docker/scout-action@v1
+      #   with:
+      #     command: cves
+      #     image: "security-scan:${{ matrix.service }}"
+      #     sarif-file: "scout-${{ matrix.service }}.sarif"
+      #     summary: true
+      #   continue-on-error: true
 
-      - name: 📊 Upload Docker Scout scan results
-        if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: "scout-${{ matrix.service }}.sarif"
-        continue-on-error: true
+      # - name: 📊 Upload Docker Scout scan results
+      #   if: steps.dockerfile-check.outputs.dockerfile-exists == 'true'
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: "scout-${{ matrix.service }}.sarif"
+      #   continue-on-error: true
 
   # Job 4: Infrastructure as Code Security
   iac-scan:
