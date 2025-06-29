@@ -71,15 +71,22 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
+      - name: ⏳ Wait for image to be available
+        run: |
+          echo "Waiting for image to be available in registry..."
+          sleep 10
+
       - name: 🔍 Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:latest
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom-${{ matrix.service }}.spdx.json
+        continue-on-error: true
 
       - name: 📊 Upload SBOM
         uses: actions/upload-artifact@v4
+        if: hashFiles('sbom-${{ matrix.service }}.spdx.json') != ''
         with:
           name: sbom-${{ matrix.service }}
           path: sbom-${{ matrix.service }}.spdx.json
