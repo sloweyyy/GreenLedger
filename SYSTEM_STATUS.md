@@ -143,7 +143,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 # 3. Calculate carbon footprint (use JWT token from login)
 curl -X POST http://localhost:8080/api/v1/calculator/calculate \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your-jwt-token-here>" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
   -d '{
     "activity_type": "vehicle",
     "distance": 100,
@@ -153,7 +153,7 @@ curl -X POST http://localhost:8080/api/v1/calculator/calculate \
 # 4. Log eco activity
 curl -X POST http://localhost:8080/api/v1/tracker/activities \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your-jwt-token-here>" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
   -d '{
     "activity_type": "biking",
     "distance": 10,

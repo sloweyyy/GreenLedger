@@ -15,7 +15,7 @@ make_request() {
     local endpoint=$2
     local data=$3
     local headers=$4
-    
+
     if [ -n "$data" ]; then
         if [ -n "$headers" ]; then
             curl -s -X "$method" "$API_BASE$endpoint" \
@@ -112,8 +112,8 @@ echo ""
 
 # Test 6: Test with Mock JWT Token (for demonstration)
 echo "6. Testing with Mock JWT Token..."
-# Note: This is a mock token for testing. In a real scenario, you'd get this from the auth service
-mock_token="Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidGVzdC11c2VyLTEyMyIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInJvbGVzIjpbInVzZXIiXSwiZXhwIjo5OTk5OTk5OTk5fQ.mock-signature"
+# Note: This is a PLACEHOLDER token for testing. In a real scenario, you'd get this from the auth service
+mock_token="Bearer PLACEHOLDER_JWT_TOKEN_FOR_TESTING_ONLY"
 
 calculation_with_auth_response=$(make_request "POST" "/calculator/calculate" "$calculation_data" "Authorization: $mock_token")
 echo "Calculation Response (with mock auth): $calculation_with_auth_response"
