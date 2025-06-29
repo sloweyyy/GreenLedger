@@ -260,8 +260,6 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: ${{ github.sha }}
           extra_args: --debug --only-verified
         continue-on-error: true
 

@@ -5,41 +5,26 @@
 # Use the default gitleaks configuration as a base
 useDefault = true
 
-[[rules]]
-# Allow placeholder tokens in documentation and test files
-id = "placeholder-tokens"
-description = "Allow placeholder tokens in documentation"
-regex = '''(?i)(placeholder|example|your_token_here|your-jwt-token-here|mock|test)'''
-path = '''(\.md$|test.*\.sh$|.*test.*\.go$|.*_test\.go$)'''
-
 [allowlist]
 description = "Allowlist for false positives"
 
 # Allow placeholder values in documentation
-[[allowlist.regexes]]
-description = "Placeholder JWT tokens in documentation"
-regex = '''(YOUR_JWT_TOKEN_HERE|PLACEHOLDER_JWT_TOKEN_FOR_TESTING_ONLY|your-jwt-token-here)'''
-
-# Allow example curl commands with placeholder auth headers
-[[allowlist.regexes]]
-description = "Placeholder auth headers in documentation"
-regex = '''Authorization: Bearer (YOUR_JWT_TOKEN_HERE|PLACEHOLDER_JWT_TOKEN_FOR_TESTING_ONLY|<your-jwt-token-here>)'''
-
-# Allow test files with mock data
-[[allowlist.paths]]
-description = "Test scripts and documentation files"
 regexes = [
+  '''(YOUR_JWT_TOKEN_HERE|PLACEHOLDER_JWT_TOKEN_FOR_TESTING_ONLY|your-jwt-token-here)''',
+  '''Authorization: Bearer (YOUR_JWT_TOKEN_HERE|PLACEHOLDER_JWT_TOKEN_FOR_TESTING_ONLY|<your-jwt-token-here>)''',
+  '''Bearer (YOUR_JWT_TOKEN_HERE|PLACEHOLDER_JWT_TOKEN_FOR_TESTING_ONLY)'''
+]
+
+# Allow test files and documentation with mock data
+paths = [
   '''scripts/test-.*\.sh$''',
   '''.*\.md$''',
   '''.*test.*\.go$''',
   '''.*_test\.go$'''
 ]
 
-# Specific file allowlist for known safe files
-[[allowlist.files]]
-description = "System status documentation"
-file = "SYSTEM_STATUS.md"
-
-[[allowlist.files]]
-description = "Test calculator script"
-file = "scripts/test-calculator.sh"
+# Specific files that are known to be safe
+files = [
+  "SYSTEM_STATUS.md",
+  "scripts/test-calculator.sh"
+]
