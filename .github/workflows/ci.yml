@@ -27,8 +27,17 @@ jobs:
 
       - name: 🧹 Clean go module cache
         run: |
+          # Remove entire Go module cache to prevent tar conflicts
           rm -rf ~/go/pkg/mod
           rm -rf ~/.cache/go-build
+          # Specifically clean toolchain cache that causes conflicts
+          rm -rf ~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.23.0.linux-amd64
+          # Ensure directories exist for cache restore
+          mkdir -p ~/go/pkg/mod
+          mkdir -p ~/.cache/go-build
+          # Verify cleanup
+          echo "Cache directories cleaned and recreated"
+          ls -la ~/go/pkg/mod/ || echo "~/go/pkg/mod is empty (expected)"
         continue-on-error: true
 
       - name: 📦 Cache Go modules
@@ -37,7 +46,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-lint-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum', '**/go.mod') }}
+          key: ${{ runner.os }}-go-lint-${{ env.GO_VERSION }}-${{ github.run_id }}-${{ hashFiles('**/go.sum', '**/go.mod') }}
           restore-keys: |
             ${{ runner.os }}-go-lint-${{ env.GO_VERSION }}-
             ${{ runner.os }}-go-lint-
@@ -105,8 +114,14 @@ jobs:
 
       - name: 🧹 Clean go module cache
         run: |
+          # Remove entire Go module cache to prevent tar conflicts
           rm -rf ~/go/pkg/mod
           rm -rf ~/.cache/go-build
+          # Specifically clean toolchain cache that causes conflicts
+          rm -rf ~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.23.0.linux-amd64
+          # Ensure directories exist for cache restore
+          mkdir -p ~/go/pkg/mod
+          mkdir -p ~/.cache/go-build
         continue-on-error: true
 
       - name: 📦 Cache Go modules
@@ -205,8 +220,14 @@ jobs:
 
       - name: 🧹 Clean go module cache
         run: |
+          # Remove entire Go module cache to prevent tar conflicts
           rm -rf ~/go/pkg/mod
           rm -rf ~/.cache/go-build
+          # Specifically clean toolchain cache that causes conflicts
+          rm -rf ~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.23.0.linux-amd64
+          # Ensure directories exist for cache restore
+          mkdir -p ~/go/pkg/mod
+          mkdir -p ~/.cache/go-build
         continue-on-error: true
 
       - name: 📦 Cache Go modules
