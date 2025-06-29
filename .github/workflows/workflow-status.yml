@@ -2,12 +2,18 @@ name: 📊 Workflow Status Check
 
 on:
   workflow_run:
-    workflows: ["🔄 Continuous Integration", "🚀 Deploy to Production", "📦 Release Management", "🔒 Security Scanning"]
+    workflows:
+      [
+        "🔄 Continuous Integration",
+        "🚀 Deploy to Production",
+        "📦 Release Management",
+        "🔒 Security Scanning",
+      ]
     types:
       - completed
   schedule:
     # Run daily at 8 AM UTC to check overall health
-    - cron: '0 8 * * *'
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 jobs:
@@ -313,7 +319,7 @@ jobs:
       - name: 🐹 Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: "1.23.0"
 
       - name: 🔍 Check for outdated dependencies
         run: |

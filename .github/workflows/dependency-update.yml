@@ -18,7 +18,7 @@ on:
           - all
 
 env:
-  GO_VERSION: "1.21"
+  GO_VERSION: "1.23.0"
 
 jobs:
   # Job 1: Update Go Dependencies
@@ -61,12 +61,12 @@ jobs:
 
           if [ -d "$WORK_DIR" ] && [ -f "$WORK_DIR/go.mod" ]; then
             cd "$WORK_DIR"
-            
+
             echo "Updating dependencies in $WORK_DIR..."
-            
+
             # Get current dependencies
             go list -m -u all > before_update.txt
-            
+
             # Update dependencies based on input
             case "${{ github.event.inputs.update_type || 'minor' }}" in
               "patch")
@@ -86,13 +86,13 @@ jobs:
                 done
                 ;;
             esac
-            
+
             # Clean up
             go mod tidy
-            
+
             # Get updated dependencies
             go list -m -u all > after_update.txt
-            
+
             # Show changes
             echo "=== Dependency Changes in $WORK_DIR ==="
             if ! diff -u before_update.txt after_update.txt; then
@@ -100,7 +100,7 @@ jobs:
             else
               echo "No dependency changes"
             fi
-            
+
             # Clean up temp files
             rm -f before_update.txt after_update.txt
           else
@@ -152,19 +152,19 @@ jobs:
           # Find all Dockerfiles
           find . -name "Dockerfile" -type f | while read -r dockerfile; do
             echo "Checking $dockerfile..."
-            
+
             # Extract base images
             grep "^FROM" "$dockerfile" | while read -r from_line; do
               image=$(echo "$from_line" | awk '{print $2}')
               echo "Base image: $image"
-              
+
               # Check if image has a specific version tag
               if [[ $image == *":"* ]] && [[ $image != *":latest" ]]; then
                 base_image=$(echo "$image" | cut -d':' -f1)
                 current_tag=$(echo "$image" | cut -d':' -f2)
-                
+
                 echo "Checking for updates to $base_image:$current_tag"
-                
+
                 # For common base images, suggest updates
                 case $base_image in
                   "golang")
@@ -213,13 +213,13 @@ jobs:
           # Find all workflow files
           find .github/workflows -name "*.yml" -o -name "*.yaml" | while read -r workflow; do
             echo "Checking $workflow..."
-            
+
             # Extract action versions
             grep -E "uses: .+@v[0-9]+" "$workflow" | while read -r line; do
               action=$(echo "$line" | sed 's/.*uses: //' | sed 's/@.*//')
               version=$(echo "$line" | sed 's/.*@//')
               echo "Action: $action, Current version: $version"
-              
+
               # Suggest common updates
               case $action in
                 "actions/checkout")
@@ -316,7 +316,7 @@ jobs:
           find artifacts/ -name "go.mod" -o -name "go.sum" | while read -r file; do
             # Extract service name from artifact path
             service=$(echo "$file" | cut -d'/' -f2 | sed 's/dependency-changes-//')
-            
+
             if [ "$service" == "root" ]; then
               target_dir="."
             elif [ "$service" == "shared" ]; then
@@ -324,7 +324,7 @@ jobs:
             else
               target_dir="services/$service"
             fi
-            
+
             if [ -d "$target_dir" ]; then
               cp "$file" "$target_dir/"
               echo "Updated $(basename "$file") in $target_dir"
