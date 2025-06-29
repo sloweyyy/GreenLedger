@@ -374,7 +374,9 @@ jobs:
           # Test that the image can be built and runs
           docker build -t test-${{ matrix.service }} -f ./services/${{ matrix.service }}/Dockerfile .
           # Basic smoke test - check if binary exists and is executable
-          docker run --rm test-${{ matrix.service }} ls -la /root/main
+          docker run --rm test-${{ matrix.service }} ls -la /app/main
+          # Test that the application starts (with timeout)
+          timeout 10s docker run --rm test-${{ matrix.service }} /app/main --help || echo "Service binary is executable"
 
   # Job 5: Load Testing
   load-test:

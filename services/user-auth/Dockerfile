@@ -43,13 +43,14 @@ RUN apk --no-cache add ca-certificates
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
-WORKDIR /root/
+# Create app directory and set as working directory
+WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/services/user-auth/main .
 
 # Change ownership to non-root user
-RUN chown appuser:appgroup main
+RUN chown appuser:appgroup main && chmod +x main
 
 # Switch to non-root user
 USER appuser
