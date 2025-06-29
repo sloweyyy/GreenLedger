@@ -25,23 +25,12 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: 🧹 Clean go module cache
+      - name: 🔥 Force clean Go module cache (pre-cache)
         run: |
-          # Use Go's built-in cache cleaning first
-          go clean -cache -modcache -i -r || true
-          # Change permissions to allow deletion (Go modules are read-only by default)
-          if [ -d ~/go/pkg/mod ]; then
-            chmod -R +w ~/go/pkg/mod
-          fi
-          # Remove entire Go module cache to prevent tar conflicts
-          rm -rf ~/go/pkg/mod
-          rm -rf ~/.cache/go-build
-          # Ensure directories exist for cache restore
-          mkdir -p ~/go/pkg/mod
-          mkdir -p ~/.cache/go-build
-          # Verify cleanup
-          echo "Cache directories cleaned and recreated"
-          ls -la ~/go/pkg/mod/ || echo "~/go/pkg/mod is empty (expected)"
+          # Force delete cache directories to prevent tar conflicts during cache restore
+          sudo rm -rf ~/go/pkg/mod ~/.cache/go-build
+          mkdir -p ~/go/pkg/mod ~/.cache/go-build
+          echo "Cache directories force-cleaned and recreated"
         continue-on-error: true
 
       - name: 📦 Cache Go modules
@@ -116,23 +105,12 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: 🧹 Clean go module cache
+      - name: 🔥 Force clean Go module cache (pre-cache)
         run: |
-          # Use Go's built-in cache cleaning first
-          go clean -cache -modcache -i -r || true
-          # Change permissions to allow deletion (Go modules are read-only by default)
-          if [ -d ~/go/pkg/mod ]; then
-            chmod -R +w ~/go/pkg/mod
-          fi
-          # Remove entire Go module cache to prevent tar conflicts
-          rm -rf ~/go/pkg/mod
-          rm -rf ~/.cache/go-build
-          # Ensure directories exist for cache restore
-          mkdir -p ~/go/pkg/mod
-          mkdir -p ~/.cache/go-build
-          # Verify cleanup
-          echo "Cache directories cleaned and recreated"
-          ls -la ~/go/pkg/mod/ || echo "~/go/pkg/mod is empty (expected)"
+          # Force delete cache directories to prevent tar conflicts during cache restore
+          sudo rm -rf ~/go/pkg/mod ~/.cache/go-build
+          mkdir -p ~/go/pkg/mod ~/.cache/go-build
+          echo "Cache directories force-cleaned and recreated"
         continue-on-error: true
 
       - name: 📦 Cache Go modules
@@ -229,23 +207,12 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: 🧹 Clean go module cache
+      - name: 🔥 Force clean Go module cache (pre-cache)
         run: |
-          # Use Go's built-in cache cleaning first
-          go clean -cache -modcache -i -r || true
-          # Change permissions to allow deletion (Go modules are read-only by default)
-          if [ -d ~/go/pkg/mod ]; then
-            chmod -R +w ~/go/pkg/mod
-          fi
-          # Remove entire Go module cache to prevent tar conflicts
-          rm -rf ~/go/pkg/mod
-          rm -rf ~/.cache/go-build
-          # Ensure directories exist for cache restore
-          mkdir -p ~/go/pkg/mod
-          mkdir -p ~/.cache/go-build
-          # Verify cleanup
-          echo "Cache directories cleaned and recreated"
-          ls -la ~/go/pkg/mod/ || echo "~/go/pkg/mod is empty (expected)"
+          # Force delete cache directories to prevent tar conflicts during cache restore
+          sudo rm -rf ~/go/pkg/mod ~/.cache/go-build
+          mkdir -p ~/go/pkg/mod ~/.cache/go-build
+          echo "Cache directories force-cleaned and recreated"
         continue-on-error: true
 
       - name: 📦 Cache Go modules
