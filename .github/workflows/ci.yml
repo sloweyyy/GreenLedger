@@ -405,8 +405,25 @@ jobs:
       - name: �🚀 Start services with Docker Compose
         run: |
           if [ -f "docker-compose.yml" ]; then
-            docker compose up -d
-            sleep 60  # Wait for services to be ready
+            echo "Starting services with Docker Compose..."
+            docker compose up -d --wait-timeout 300
+            echo "Waiting for services to be ready..."
+            sleep 90  # Extended wait for Kafka to be ready
+
+            # Check service health
+            echo "Checking service health..."
+            docker compose ps
+
+            # Wait for Kafka specifically
+            echo "Waiting for Kafka to be ready..."
+            for i in {1..30}; do
+              if docker compose exec -T kafka kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1; then
+                echo "Kafka is ready!"
+                break
+              fi
+              echo "Waiting for Kafka... ($i/30)"
+              sleep 5
+            done
           else
             echo "No docker-compose.yml found, skipping service startup"
           fi
