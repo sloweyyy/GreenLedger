@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/shopspring/decimal v1.4.0
-	github.com/sloweyyy/GreenLedger/shared v0.0.0-20250601064651-0f13d757d31b
+	github.com/sloweyyy/GreenLedger/shared v0.0.0-20250629111353-4905415d13aa
 	gorm.io/gorm v1.30.0
 )
 
