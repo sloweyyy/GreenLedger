@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/shopspring/decimal v1.4.0
-	github.com/sloweyyy/GreenLedger/shared v0.0.0-20250629111353-4905415d13aa
+	github.com/sloweyyy/GreenLedger/shared v0.0.0-20250817084918-3b22b8f9f5bf
 	gorm.io/gorm v1.30.1
 )
 
@@ -46,7 +46,7 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
-	google.golang.org/protobuf v1.36.7 // indirect
+	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
 )
