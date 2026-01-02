@@ -99,7 +99,7 @@ func TestCollectSummaryData_MostLeastActiveDays(t *testing.T) {
 	mockRepo.On("GetCreditsByMonth", ctx, userID, startDate, endDate).
 		Return([]repository.MonthlyData{}, nil)
 	mockRepo.On("GetTopEarningActivities", ctx, userID, startDate, endDate, 10).
-		Return([]models.ActivitySummary(nil), nil)
+		Return(nil, nil)
 	mockRepo.On("GetRecentTransactions", ctx, userID, startDate, endDate, 20).
 		Return([]models.TransactionSummary{}, nil)
 
@@ -123,7 +123,37 @@ func TestCollectSummaryData_MostLeastActiveDays(t *testing.T) {
 	assert.Equal(t, day2, data.LeastActiveDay)
 	assert.Equal(t, int64(17), data.TotalActivities)
 
-	// Test Case 2: No activity data
+	// Test Case 2: Tie breaking (equal activity counts)
+	// day4 and day5 both have 8 activities. Logic should pick day4 (earlier) as most active.
+	day4 := startDate.AddDate(0, 0, 4)
+	day5 := startDate.AddDate(0, 0, 5)
+
+	tieStats := []repository.DailyActivity{
+		{Day: day4, Count: 8},
+		{Day: day5, Count: 8},
+	}
+
+	mockRepo.On("GetActivityStats", ctx, userID, startDate, endDate).
+		Return(int64(16), tieStats, nil).Once()
+
+	dataTie, err := collector.CollectSummaryData(ctx, userID, startDate, endDate)
+	assert.NoError(t, err)
+	assert.Equal(t, day4, dataTie.MostActiveDay) // Expecting earliest day
+	assert.Equal(t, day5, dataTie.LeastActiveDay) // Last one is "least active" in the list
+
+	// Test Case 3: Single day activity
+	singleDayStats := []repository.DailyActivity{
+		{Day: day1, Count: 1},
+	}
+	mockRepo.On("GetActivityStats", ctx, userID, startDate, endDate).
+		Return(int64(1), singleDayStats, nil).Once()
+
+	dataSingle, err := collector.CollectSummaryData(ctx, userID, startDate, endDate)
+	assert.NoError(t, err)
+	assert.Equal(t, day1, dataSingle.MostActiveDay)
+	assert.Equal(t, day1, dataSingle.LeastActiveDay)
+
+	// Test Case 4: No activity data
 	mockRepo.On("GetActivityStats", ctx, userID, startDate, endDate).
 		Return(int64(0), []repository.DailyActivity{}, nil).Once()
 
@@ -133,12 +163,13 @@ func TestCollectSummaryData_MostLeastActiveDays(t *testing.T) {
 	assert.Equal(t, endDate, dataEmpty.LeastActiveDay)
 	assert.Equal(t, int64(0), dataEmpty.TotalActivities)
 
-	// Test Case 3: Error fetching activity stats
+	// Test Case 5: Error fetching activity stats
+	// We expect the error to be logged (suppressed) and fallback values to be used.
 	mockRepo.On("GetActivityStats", ctx, userID, startDate, endDate).
-		Return(int64(0), []repository.DailyActivity(nil), errors.New("db error")).Once()
+		Return(int64(0), nil, errors.New("db error")).Once()
 
 	dataErr, err := collector.CollectSummaryData(ctx, userID, startDate, endDate)
-	assert.NoError(t, err) // Should not return error, just log it
+	assert.NoError(t, err)
 	assert.Equal(t, startDate, dataErr.MostActiveDay) // Fallback
 	assert.Equal(t, endDate, dataErr.LeastActiveDay)  // Fallback
 

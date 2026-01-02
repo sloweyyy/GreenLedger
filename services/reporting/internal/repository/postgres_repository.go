@@ -266,11 +266,16 @@ func (r *PostgresReportingRepository) GetTopEarningActivities(ctx context.Contex
 		}
 
 		credits := decimal.NewFromFloat(totalCredits.Float64)
+		averagePerActivity := decimal.Zero
+		if count.Int64 > 0 {
+			averagePerActivity = credits.Div(decimal.NewFromInt(count.Int64))
+		}
+
 		summaries = append(summaries, models.ActivitySummary{
 			ActivityType:       activityType,
 			Count:              count.Int64,
 			TotalCredits:       credits,
-			AveragePerActivity: credits.Div(decimal.NewFromInt(count.Int64)),
+			AveragePerActivity: averagePerActivity,
 		})
 	}
 
@@ -324,12 +329,9 @@ func (r *PostgresReportingRepository) GetActivityStats(ctx context.Context, user
 		return 0, nil, nil
 	}
 
-	// Combined query to get total count and daily breakdown
-	// We use window function to get total count over the whole result set (or a separate CTE)
-	// But simpler might be to just do one query for aggregation which gives us both if we sum it up in code,
-	// or just two simple queries in one transaction or function.
-	// Actually, the requirement was to optimize.
-	// If we group by day, the sum of counts is the total count.
+	// Combined query to get total count and daily breakdown.
+	// We use a single aggregation query to get daily counts, and then derive the
+	// total count in code by summing the per-day counts.
 
 	query := `
 		SELECT

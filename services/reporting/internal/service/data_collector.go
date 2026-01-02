@@ -84,11 +84,16 @@ func (c *DatabaseDataCollector) CollectFootprintData(ctx context.Context, userID
 
 		// Add to top activities
 		if len(data.TopActivities) < 10 {
+			averagePerActivity := decimal.Zero
+			if summary.Count > 0 {
+				averagePerActivity = summary.TotalCO2.Div(decimal.NewFromInt(summary.Count))
+			}
+
 			data.TopActivities = append(data.TopActivities, models.ActivitySummary{
 				ActivityType:       summary.ActivityType,
 				Count:              summary.Count,
 				TotalCO2:           summary.TotalCO2,
-				AveragePerActivity: summary.TotalCO2.Div(decimal.NewFromInt(summary.Count)),
+				AveragePerActivity: averagePerActivity,
 			})
 		}
 	}
@@ -228,11 +233,16 @@ func (c *DatabaseDataCollector) CollectSummaryData(ctx context.Context, userID s
 	}
 
 	// Calculate most/least active days from daily stats
+	// Note: dailyActivities only includes days where at least one activity occurred.
+	// When there is no activity at all in the period, dailyActivities will be empty
+	// and the defaults (Start/End date) set above will be used.
 	if len(dailyActivities) > 0 {
-		// Most active day is the first one (ordered by count DESC)
+		// Most active day is the first one (ordered by count DESC).
+		// In case of a tie, the sort order 'day ASC' ensures the earliest day is picked.
 		data.MostActiveDay = dailyActivities[0].Day
 
-		// Least active day is the last one (ordered by count DESC, implies lowest count > 0)
+		// Least active day is the last one (ordered by count DESC).
+		// This represents the least active day *among days with activity*.
 		data.LeastActiveDay = dailyActivities[len(dailyActivities)-1].Day
 	}
 
