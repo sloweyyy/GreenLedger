@@ -52,6 +52,11 @@ func (s *LocalFileStorage) Save(ctx context.Context, path string, content []byte
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
+	// Check context again before the potentially expensive write operation
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// Write file
 	if err := os.WriteFile(fullPath, content, 0644); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)

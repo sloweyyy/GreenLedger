@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -230,7 +229,10 @@ func (s *ReportingService) generateReportAsync(ctx context.Context, report *mode
 		s.logger.LogError(ctx, "failed to collect report data", err,
 			logger.String("report_id", report.ID.String()))
 		report.Status = models.ReportStatusFailed
-		s.reportRepo.Update(ctx, report)
+		if updateErr := s.reportRepo.Update(ctx, report); updateErr != nil {
+			s.logger.LogError(ctx, "failed to update report status to failed", updateErr,
+				logger.String("report_id", report.ID.String()))
+		}
 		return
 	}
 
@@ -251,16 +253,10 @@ func (s *ReportingService) generateReportAsync(ctx context.Context, report *mode
 		s.logger.LogError(ctx, "failed to render report", err,
 			logger.String("report_id", report.ID.String()))
 		report.Status = models.ReportStatusFailed
-		s.reportRepo.Update(ctx, report)
-		return
-	}
-
-	// Sanitize UserID to prevent path traversal issues or weird filenames
-	// Although storage backend handles traversal, we should ensure the logical structure is maintained
-	if strings.ContainsAny(report.UserID, "/\\.") {
-		s.logger.LogError(ctx, "invalid user id for file path", nil, logger.String("user_id", report.UserID))
-		report.Status = models.ReportStatusFailed
-		s.reportRepo.Update(ctx, report)
+		if updateErr := s.reportRepo.Update(ctx, report); updateErr != nil {
+			s.logger.LogError(ctx, "failed to update report status to failed", updateErr,
+				logger.String("report_id", report.ID.String()))
+		}
 		return
 	}
 
@@ -270,7 +266,10 @@ func (s *ReportingService) generateReportAsync(ctx context.Context, report *mode
 		s.logger.LogError(ctx, "failed to save report file", err,
 			logger.String("report_id", report.ID.String()))
 		report.Status = models.ReportStatusFailed
-		s.reportRepo.Update(ctx, report)
+		if updateErr := s.reportRepo.Update(ctx, report); updateErr != nil {
+			s.logger.LogError(ctx, "failed to update report status to failed", updateErr,
+				logger.String("report_id", report.ID.String()))
+		}
 		return
 	}
 

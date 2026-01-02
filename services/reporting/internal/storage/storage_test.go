@@ -81,7 +81,7 @@ func TestLocalFileStorage_PathTraversal(t *testing.T) {
 		}
 	}
 
-	// Case 3: Verify ".." staying inside is fine (if we supported it, but our clean logic removes it)
+	// Case 2: Verify ".." staying inside is fine (if we supported it, but our clean logic removes it)
 	// path/../path/file.txt -> path/file.txt which is inside.
 	err = storage.Save(ctx, "subdir/../allowed.txt", []byte("ok"))
 	if err != nil {

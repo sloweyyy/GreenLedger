@@ -118,7 +118,8 @@ func main() {
 	reportRenderer := service.NewPDFReportRenderer(logger)
 
 	// Initialize file storage
-	// Using a default "data" directory in the current working directory, or configured via env
+	// REPORTING_DATA_DIR configures the storage path for generated reports.
+	// Defaults to "data" in the current working directory if not set.
 	storagePath := os.Getenv("REPORTING_DATA_DIR")
 	if storagePath == "" {
 		storagePath = "data"
