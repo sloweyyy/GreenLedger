@@ -391,5 +391,32 @@ func (c *DatabaseDataCollector) CollectSummaryData(ctx context.Context, userID s
 	data.MostActiveDay = startDate
 	data.LeastActiveDay = endDate
 
+	if c.trackerDB != nil {
+		type dailyActivity struct {
+			Day   time.Time `gorm:"column:day"`
+			Count int64     `gorm:"column:count"`
+		}
+
+		var dailyActivities []dailyActivity
+		activityQuery := `
+			SELECT
+				DATE_TRUNC('day', created_at) as day,
+				COUNT(*) as count
+			FROM eco_activities
+			WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3
+			GROUP BY DATE_TRUNC('day', created_at)
+			ORDER BY count DESC, day ASC
+		`
+
+		err := c.trackerDB.WithContext(ctx).Raw(activityQuery, userID, startDate, endDate).Scan(&dailyActivities).Error
+		if err == nil && len(dailyActivities) > 0 {
+			// Most active day is the first one (ordered by count DESC)
+			data.MostActiveDay = dailyActivities[0].Day
+
+			// Least active day is the last one (ordered by count DESC, implies lowest count > 0)
+			data.LeastActiveDay = dailyActivities[len(dailyActivities)-1].Day
+		}
+	}
+
 	return data, nil
 }
