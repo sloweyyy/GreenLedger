@@ -2,23 +2,20 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // DatabaseDataCollector implements DataCollector using database queries
 type DatabaseDataCollector struct {
-	calculatorDB *database.PostgresDB
-	trackerDB    *database.PostgresDB
-	walletDB     *database.PostgresDB
-	logger       *logger.Logger
+	repo   repository.ReportingRepository
+	logger *logger.Logger
 }
 
 // NewDatabaseDataCollector creates a new database data collector
@@ -29,10 +26,19 @@ func NewDatabaseDataCollector(
 	logger *logger.Logger,
 ) *DatabaseDataCollector {
 	return &DatabaseDataCollector{
-		calculatorDB: calculatorDB,
-		trackerDB:    trackerDB,
-		walletDB:     walletDB,
-		logger:       logger,
+		repo:   repository.NewPostgresReportingRepository(calculatorDB, trackerDB, walletDB),
+		logger: logger,
+	}
+}
+
+// NewDatabaseDataCollectorWithRepo creates a new database data collector with injected repository
+func NewDatabaseDataCollectorWithRepo(
+	repo repository.ReportingRepository,
+	logger *logger.Logger,
+) *DatabaseDataCollector {
+	return &DatabaseDataCollector{
+		repo:   repo,
+		logger: logger,
 	}
 }
 
@@ -53,25 +59,13 @@ func (c *DatabaseDataCollector) CollectFootprintData(ctx context.Context, userID
 	}
 
 	// Get total CO2 and calculation count
-	var totalCO2 sql.NullFloat64
-	var totalCalculations sql.NullInt64
-
-	query := `
-		SELECT 
-			COALESCE(SUM(total_co2_kg), 0) as total_co2,
-			COUNT(*) as total_calculations
-		FROM calculations 
-		WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3
-	`
-
-	err := c.calculatorDB.WithContext(ctx).Raw(query, userID, startDate, endDate).
-		Row().Scan(&totalCO2, &totalCalculations)
+	totalCO2, totalCalculations, err := c.repo.GetTotalFootprint(ctx, userID, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total footprint: %w", err)
 	}
 
-	data.TotalCO2Kg = decimal.NewFromFloat(totalCO2.Float64)
-	data.TotalCalculations = totalCalculations.Int64
+	data.TotalCO2Kg = totalCO2
+	data.TotalCalculations = totalCalculations
 
 	// Calculate average per day
 	days := endDate.Sub(startDate).Hours() / 24
@@ -80,74 +74,39 @@ func (c *DatabaseDataCollector) CollectFootprintData(ctx context.Context, userID
 	}
 
 	// Get CO2 by activity type
-	activityQuery := `
-		SELECT 
-			a.activity_type,
-			COALESCE(SUM(a.co2_kg), 0) as total_co2,
-			COUNT(*) as count
-		FROM activities a
-		JOIN calculations c ON a.calculation_id = c.id
-		WHERE c.user_id = $1 AND c.created_at >= $2 AND c.created_at <= $3
-		GROUP BY a.activity_type
-		ORDER BY total_co2 DESC
-	`
-
-	rows, err := c.calculatorDB.WithContext(ctx).Raw(activityQuery, userID, startDate, endDate).Rows()
+	activitySummaries, err := c.repo.GetFootprintByActivityType(ctx, userID, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get activity breakdown: %w", err)
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var activityType string
-		var totalCO2 sql.NullFloat64
-		var count sql.NullInt64
-
-		if err := rows.Scan(&activityType, &totalCO2, &count); err != nil {
-			continue
-		}
-
-		co2Amount := decimal.NewFromFloat(totalCO2.Float64)
-		data.ByActivityType[activityType] = co2Amount
+	for _, summary := range activitySummaries {
+		data.ByActivityType[summary.ActivityType] = summary.TotalCO2
 
 		// Add to top activities
 		if len(data.TopActivities) < 10 {
+			averagePerActivity := decimal.Zero
+			if summary.Count > 0 {
+				averagePerActivity = summary.TotalCO2.Div(decimal.NewFromInt(summary.Count))
+			}
+
 			data.TopActivities = append(data.TopActivities, models.ActivitySummary{
-				ActivityType:       activityType,
-				Count:              count.Int64,
-				TotalCO2:           co2Amount,
-				AveragePerActivity: co2Amount.Div(decimal.NewFromInt(count.Int64)),
+				ActivityType:       summary.ActivityType,
+				Count:              summary.Count,
+				TotalCO2:           summary.TotalCO2,
+				AveragePerActivity: averagePerActivity,
 			})
 		}
 	}
 
 	// Get CO2 by month
-	monthQuery := `
-		SELECT 
-			DATE_TRUNC('month', created_at) as month,
-			COALESCE(SUM(total_co2_kg), 0) as total_co2
-		FROM calculations 
-		WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3
-		GROUP BY DATE_TRUNC('month', created_at)
-		ORDER BY month
-	`
-
-	monthRows, err := c.calculatorDB.WithContext(ctx).Raw(monthQuery, userID, startDate, endDate).Rows()
+	monthlyData, err := c.repo.GetFootprintByMonth(ctx, userID, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get monthly breakdown: %w", err)
 	}
-	defer monthRows.Close()
 
-	for monthRows.Next() {
-		var month time.Time
-		var totalCO2 sql.NullFloat64
-
-		if err := monthRows.Scan(&month, &totalCO2); err != nil {
-			continue
-		}
-
-		monthKey := month.Format("2006-01")
-		data.ByMonth[monthKey] = decimal.NewFromFloat(totalCO2.Float64)
+	for _, md := range monthlyData {
+		monthKey := md.Month.Format("2006-01")
+		data.ByMonth[monthKey] = md.Value
 	}
 
 	// TODO: Calculate comparison to average (would need global statistics)
@@ -172,166 +131,54 @@ func (c *DatabaseDataCollector) CollectCreditsData(ctx context.Context, userID s
 	}
 
 	// Get current wallet balance
-	var availableCredits sql.NullFloat64
-	var totalEarned sql.NullFloat64
-	var totalSpent sql.NullFloat64
-
-	walletQuery := `
-		SELECT 
-			COALESCE(available_credits, 0) as available_credits,
-			COALESCE(total_earned, 0) as total_earned,
-			COALESCE(total_spent, 0) as total_spent
-		FROM wallets 
-		WHERE user_id = $1
-	`
-
-	err := c.walletDB.WithContext(ctx).Raw(walletQuery, userID).
-		Row().Scan(&availableCredits, &totalEarned, &totalSpent)
-	if err != nil && err != sql.ErrNoRows {
+	avail, earn, spent, err := c.repo.GetWalletBalance(ctx, userID)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get wallet data: %w", err)
 	}
 
-	data.CurrentBalance = decimal.NewFromFloat(availableCredits.Float64)
-	data.TotalCreditsEarned = decimal.NewFromFloat(totalEarned.Float64)
-	data.TotalCreditsSpent = decimal.NewFromFloat(totalSpent.Float64)
+	data.CurrentBalance = avail
+	data.TotalCreditsEarned = earn
+	data.TotalCreditsSpent = spent
 
 	// Get transaction count and breakdown by source
-	transactionQuery := `
-		SELECT 
-			COUNT(*) as total_transactions,
-			source,
-			COALESCE(SUM(CASE WHEN type IN ('credit_earned', 'transfer_in', 'refund', 'bonus') THEN amount ELSE 0 END), 0) as credits_earned
-		FROM transactions 
-		WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3 AND status = 'completed'
-		GROUP BY source
-	`
-
-	rows, err := c.walletDB.WithContext(ctx).Raw(transactionQuery, userID, startDate, endDate).Rows()
+	txSummaries, err := c.repo.GetTransactionsBySource(ctx, userID, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction data: %w", err)
 	}
-	defer rows.Close()
 
 	var totalTransactions int64
-	for rows.Next() {
-		var count sql.NullInt64
-		var source sql.NullString
-		var creditsEarned sql.NullFloat64
-
-		if err := rows.Scan(&count, &source, &creditsEarned); err != nil {
-			continue
-		}
-
-		totalTransactions += count.Int64
-		if source.Valid {
-			data.BySource[source.String] = decimal.NewFromFloat(creditsEarned.Float64)
-		}
+	for _, summary := range txSummaries {
+		totalTransactions += summary.TotalCount
+		data.BySource[summary.Source] = summary.CreditsEarned
 	}
 	data.TotalTransactions = totalTransactions
 
 	// Get credits by month
-	monthQuery := `
-		SELECT 
-			DATE_TRUNC('month', created_at) as month,
-			COALESCE(SUM(CASE WHEN type IN ('credit_earned', 'transfer_in', 'refund', 'bonus') THEN amount ELSE 0 END), 0) as credits_earned
-		FROM transactions 
-		WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3 AND status = 'completed'
-		GROUP BY DATE_TRUNC('month', created_at)
-		ORDER BY month
-	`
-
-	monthRows, err := c.walletDB.WithContext(ctx).Raw(monthQuery, userID, startDate, endDate).Rows()
+	monthlyData, err := c.repo.GetCreditsByMonth(ctx, userID, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get monthly credits: %w", err)
 	}
-	defer monthRows.Close()
 
-	for monthRows.Next() {
-		var month time.Time
-		var creditsEarned sql.NullFloat64
-
-		if err := monthRows.Scan(&month, &creditsEarned); err != nil {
-			continue
-		}
-
-		monthKey := month.Format("2006-01")
-		data.ByMonth[monthKey] = decimal.NewFromFloat(creditsEarned.Float64)
+	for _, md := range monthlyData {
+		monthKey := md.Month.Format("2006-01")
+		data.ByMonth[monthKey] = md.Value
 	}
 
 	// Get top earning activities from tracker service
-	if c.trackerDB != nil {
-		activityQuery := `
-			SELECT 
-				at.name as activity_type,
-				COUNT(*) as count,
-				COALESCE(SUM(ea.credits_earned), 0) as total_credits
-			FROM eco_activities ea
-			JOIN activity_types at ON ea.activity_type_id = at.id
-			WHERE ea.user_id = $1 AND ea.created_at >= $2 AND ea.created_at <= $3 AND ea.is_verified = true
-			GROUP BY at.name
-			ORDER BY total_credits DESC
-			LIMIT 10
-		`
-
-		activityRows, err := c.trackerDB.WithContext(ctx).Raw(activityQuery, userID, startDate, endDate).Rows()
-		if err == nil {
-			defer activityRows.Close()
-
-			for activityRows.Next() {
-				var activityType string
-				var count sql.NullInt64
-				var totalCredits sql.NullFloat64
-
-				if err := activityRows.Scan(&activityType, &count, &totalCredits); err != nil {
-					continue
-				}
-
-				credits := decimal.NewFromFloat(totalCredits.Float64)
-				data.TopEarningActivities = append(data.TopEarningActivities, models.ActivitySummary{
-					ActivityType:       activityType,
-					Count:              count.Int64,
-					TotalCredits:       credits,
-					AveragePerActivity: credits.Div(decimal.NewFromInt(count.Int64)),
-				})
-			}
-		}
+	topActivities, err := c.repo.GetTopEarningActivities(ctx, userID, startDate, endDate, 10)
+	if err == nil && topActivities != nil {
+		data.TopEarningActivities = topActivities
+	} else if err != nil {
+		c.logger.LogError(ctx, "failed to get top earning activities", err,
+			logger.String("user_id", userID))
 	}
 
 	// Get recent transactions
-	recentQuery := `
-		SELECT id, type, amount, description, created_at
-		FROM transactions 
-		WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3 AND status = 'completed'
-		ORDER BY created_at DESC
-		LIMIT 20
-	`
-
-	recentRows, err := c.walletDB.WithContext(ctx).Raw(recentQuery, userID, startDate, endDate).Rows()
+	recentTx, err := c.repo.GetRecentTransactions(ctx, userID, startDate, endDate, 20)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent transactions: %w", err)
 	}
-	defer recentRows.Close()
-
-	for recentRows.Next() {
-		var id string
-		var txType string
-		var amount sql.NullFloat64
-		var description string
-		var createdAt time.Time
-
-		if err := recentRows.Scan(&id, &txType, &amount, &description, &createdAt); err != nil {
-			continue
-		}
-
-		txID, _ := uuid.Parse(id)
-		data.RecentTransactions = append(data.RecentTransactions, models.TransactionSummary{
-			ID:          txID,
-			Type:        txType,
-			Amount:      decimal.NewFromFloat(amount.Float64),
-			Description: description,
-			CreatedAt:   createdAt,
-		})
-	}
+	data.RecentTransactions = recentTx
 
 	return data, nil
 }
@@ -352,16 +199,12 @@ func (c *DatabaseDataCollector) CollectSummaryData(ctx context.Context, userID s
 		return nil, fmt.Errorf("failed to collect credits data: %w", err)
 	}
 
-	// Get activity count from tracker service
-	var totalActivities int64
-	if c.trackerDB != nil {
-		activityCountQuery := `
-			SELECT COUNT(*) 
-			FROM eco_activities 
-			WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3
-		`
-		c.trackerDB.WithContext(ctx).Raw(activityCountQuery, userID, startDate, endDate).
-			Row().Scan(&totalActivities)
+	// Get activity count and daily stats from tracker service
+	totalActivities, dailyActivities, err := c.repo.GetActivityStats(ctx, userID, startDate, endDate)
+	if err != nil {
+		// Log error but continue with 0 activities
+		c.logger.LogError(ctx, "failed to get activity stats", err,
+			logger.String("user_id", userID))
 	}
 
 	// Calculate averages
@@ -385,11 +228,29 @@ func (c *DatabaseDataCollector) CollectSummaryData(ctx context.Context, userID s
 		AverageCreditsPerDay: averageCreditsPerDay,
 		StartDate:            startDate,
 		EndDate:              endDate,
+		MostActiveDay:        startDate,
+		LeastActiveDay:       endDate,
 	}
 
-	// TODO: Calculate most/least active days
-	data.MostActiveDay = startDate
-	data.LeastActiveDay = endDate
+	// Calculate most/least active days from daily stats.
+	// Note: dailyActivities only includes days where at least one activity occurred.
+	// When there is no activity at all in the period, dailyActivities will be empty
+	// and the defaults (Start/End date) set above will be used.
+	//
+	// As a consequence, both MostActiveDay and LeastActiveDay are calculated
+	// *only among days with at least one activity*. Days with zero activities
+	// are not considered when determining these values.
+	if len(dailyActivities) > 0 {
+		// Most active day is the first one (ordered by count DESC).
+		// In case of a tie, the sort order 'day ASC' ensures the earliest day is picked.
+		data.MostActiveDay = dailyActivities[0].Day
+
+		// Least active day is the last one (ordered by count DESC).
+		// This represents the least active day *among days with activity*.
+		// In case of a tie for the lowest count, the sort order 'day ASC' means
+		// the latest day with that count (the last element) is selected.
+		data.LeastActiveDay = dailyActivities[len(dailyActivities)-1].Day
+	}
 
 	return data, nil
 }
