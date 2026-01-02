@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/storage"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
@@ -17,6 +18,7 @@ type ReportingService struct {
 	reportRepo     *repository.ReportRepository
 	dataCollector  DataCollector
 	reportRenderer ReportRenderer
+	fileStorage    storage.FileStorage
 	logger         *logger.Logger
 }
 
@@ -25,12 +27,14 @@ func NewReportingService(
 	reportRepo *repository.ReportRepository,
 	dataCollector DataCollector,
 	reportRenderer ReportRenderer,
+	fileStorage storage.FileStorage,
 	logger *logger.Logger,
 ) *ReportingService {
 	return &ReportingService{
 		reportRepo:     reportRepo,
 		dataCollector:  dataCollector,
 		reportRenderer: reportRenderer,
+		fileStorage:    fileStorage,
 		logger:         logger,
 	}
 }
@@ -175,7 +179,11 @@ func (s *ReportingService) DeleteReport(ctx context.Context, reportID uuid.UUID,
 
 	// Delete report file if exists
 	if report.FilePath != "" {
-		// TODO: Delete file from storage
+		if err := s.fileStorage.Delete(ctx, report.FilePath); err != nil {
+			s.logger.LogError(ctx, "failed to delete report file", err,
+				logger.String("file_path", report.FilePath))
+			// Continue execution to delete the report record
+		}
 	}
 
 	// Delete report record
@@ -248,7 +256,13 @@ func (s *ReportingService) generateReportAsync(ctx context.Context, report *mode
 
 	// Save report file
 	filePath := fmt.Sprintf("reports/%s/%s.%s", report.UserID, report.ID.String(), report.Format)
-	// TODO: Save content to file storage (S3, local filesystem, etc.)
+	if err := s.fileStorage.Save(ctx, filePath, content); err != nil {
+		s.logger.LogError(ctx, "failed to save report file", err,
+			logger.String("report_id", report.ID.String()))
+		report.Status = models.ReportStatusFailed
+		s.reportRepo.Update(ctx, report)
+		return
+	}
 
 	// Update report with file information
 	now := time.Now().UTC()
@@ -259,6 +273,11 @@ func (s *ReportingService) generateReportAsync(ctx context.Context, report *mode
 
 	if err := s.reportRepo.Update(ctx, report); err != nil {
 		s.logger.LogError(ctx, "failed to update report", err)
+		// Try to delete the file if database update fails to avoid orphans
+		if deleteErr := s.fileStorage.Delete(ctx, filePath); deleteErr != nil {
+			s.logger.LogError(ctx, "failed to cleanup report file after db update failure", deleteErr,
+				logger.String("file_path", filePath))
+		}
 		return
 	}
 

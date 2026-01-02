@@ -15,6 +15,7 @@ import (
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/service"
+	"github.com/sloweyyy/GreenLedger/services/reporting/internal/storage"
 	"github.com/sloweyyy/GreenLedger/shared/config"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	sharedLogger "github.com/sloweyyy/GreenLedger/shared/logger"
@@ -116,10 +117,19 @@ func main() {
 
 	reportRenderer := service.NewPDFReportRenderer(logger)
 
+	// Initialize file storage
+	// Using a default "data" directory in the current working directory
+	fileStorage, err := storage.NewLocalFileStorage("data")
+	if err != nil {
+		logger.LogError(context.Background(), "failed to initialize file storage", err)
+		log.Fatalf("Failed to initialize file storage: %v", err)
+	}
+
 	reportingService := service.NewReportingService(
 		reportRepo,
 		dataCollector,
 		reportRenderer,
+		fileStorage,
 		logger,
 	)
 
