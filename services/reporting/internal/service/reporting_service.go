@@ -10,6 +10,7 @@ import (
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
+	"github.com/sloweyyy/GreenLedger/shared/storage"
 )
 
 // ReportingService handles report generation and management
@@ -17,6 +18,7 @@ type ReportingService struct {
 	reportRepo     *repository.ReportRepository
 	dataCollector  DataCollector
 	reportRenderer ReportRenderer
+	storage        storage.Storage
 	logger         *logger.Logger
 }
 
@@ -25,12 +27,14 @@ func NewReportingService(
 	reportRepo *repository.ReportRepository,
 	dataCollector DataCollector,
 	reportRenderer ReportRenderer,
+	storage storage.Storage,
 	logger *logger.Logger,
 ) *ReportingService {
 	return &ReportingService{
 		reportRepo:     reportRepo,
 		dataCollector:  dataCollector,
 		reportRenderer: reportRenderer,
+		storage:        storage,
 		logger:         logger,
 	}
 }
@@ -175,7 +179,12 @@ func (s *ReportingService) DeleteReport(ctx context.Context, reportID uuid.UUID,
 
 	// Delete report file if exists
 	if report.FilePath != "" {
-		// TODO: Delete file from storage
+		if err := s.storage.Delete(ctx, report.FilePath); err != nil {
+			s.logger.LogError(ctx, "failed to delete report file", err,
+				logger.String("report_id", reportID.String()),
+				logger.String("file_path", report.FilePath))
+			// Continue with deleting record even if file deletion fails
+		}
 	}
 
 	// Delete report record
@@ -248,7 +257,14 @@ func (s *ReportingService) generateReportAsync(ctx context.Context, report *mode
 
 	// Save report file
 	filePath := fmt.Sprintf("reports/%s/%s.%s", report.UserID, report.ID.String(), report.Format)
-	// TODO: Save content to file storage (S3, local filesystem, etc.)
+	if err := s.storage.Save(ctx, filePath, content); err != nil {
+		s.logger.LogError(ctx, "failed to save report file", err,
+			logger.String("report_id", report.ID.String()),
+			logger.String("file_path", filePath))
+		report.Status = models.ReportStatusFailed
+		s.reportRepo.Update(ctx, report)
+		return
+	}
 
 	// Update report with file information
 	now := time.Now().UTC()

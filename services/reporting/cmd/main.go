@@ -19,6 +19,7 @@ import (
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	sharedLogger "github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/sloweyyy/GreenLedger/shared/middleware"
+	"github.com/sloweyyy/GreenLedger/shared/storage"
 )
 
 // @title GreenLedger Reporting Service API
@@ -116,10 +117,19 @@ func main() {
 
 	reportRenderer := service.NewPDFReportRenderer(logger)
 
+	// Initialize storage
+	// Use local storage for now, but this could be switched to S3 based on config
+	fileStorage, err := storage.NewLocalFileStorage("./data")
+	if err != nil {
+		logger.LogError(context.Background(), "failed to initialize storage", err)
+		log.Fatalf("Failed to initialize storage: %v", err)
+	}
+
 	reportingService := service.NewReportingService(
 		reportRepo,
 		dataCollector,
 		reportRenderer,
+		fileStorage,
 		logger,
 	)
 
