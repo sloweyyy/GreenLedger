@@ -124,7 +124,10 @@ func TestCollectSummaryData_MostLeastActiveDays(t *testing.T) {
 	assert.Equal(t, int64(17), data.TotalActivities)
 
 	// Test Case 2: Tie breaking (equal activity counts)
-	// day4 and day5 both have 8 activities. Logic should pick day4 (earlier) as most active.
+	// day4 and day5 both have 8 activities.
+	// The repository returns them sorted by count DESC, day ASC (mock simulates this).
+	// Logic should pick day4 (earlier) as most active.
+	// For least active, since both are "least" (equal count), it picks the last one in the list (day5).
 	day4 := startDate.AddDate(0, 0, 4)
 	day5 := startDate.AddDate(0, 0, 5)
 
@@ -138,8 +141,8 @@ func TestCollectSummaryData_MostLeastActiveDays(t *testing.T) {
 
 	dataTie, err := collector.CollectSummaryData(ctx, userID, startDate, endDate)
 	assert.NoError(t, err)
-	assert.Equal(t, day4, dataTie.MostActiveDay) // Expecting earliest day
-	assert.Equal(t, day5, dataTie.LeastActiveDay) // Last one is "least active" in the list
+	assert.Equal(t, day4, dataTie.MostActiveDay) // Expecting earliest day (first in list)
+	assert.Equal(t, day5, dataTie.LeastActiveDay) // Expecting latest day (last in list)
 
 	// Test Case 3: Single day activity
 	singleDayStats := []repository.DailyActivity{

@@ -232,10 +232,14 @@ func (c *DatabaseDataCollector) CollectSummaryData(ctx context.Context, userID s
 		LeastActiveDay:       endDate,
 	}
 
-	// Calculate most/least active days from daily stats
+	// Calculate most/least active days from daily stats.
 	// Note: dailyActivities only includes days where at least one activity occurred.
 	// When there is no activity at all in the period, dailyActivities will be empty
 	// and the defaults (Start/End date) set above will be used.
+	//
+	// As a consequence, both MostActiveDay and LeastActiveDay are calculated
+	// *only among days with at least one activity*. Days with zero activities
+	// are not considered when determining these values.
 	if len(dailyActivities) > 0 {
 		// Most active day is the first one (ordered by count DESC).
 		// In case of a tie, the sort order 'day ASC' ensures the earliest day is picked.
@@ -243,6 +247,8 @@ func (c *DatabaseDataCollector) CollectSummaryData(ctx context.Context, userID s
 
 		// Least active day is the last one (ordered by count DESC).
 		// This represents the least active day *among days with activity*.
+		// In case of a tie for the lowest count, the sort order 'day ASC' means
+		// the latest day with that count (the last element) is selected.
 		data.LeastActiveDay = dailyActivities[len(dailyActivities)-1].Day
 	}
 
