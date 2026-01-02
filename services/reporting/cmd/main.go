@@ -118,8 +118,13 @@ func main() {
 	reportRenderer := service.NewPDFReportRenderer(logger)
 
 	// Initialize file storage
-	// Using a default "data" directory in the current working directory
-	fileStorage, err := storage.NewLocalFileStorage("data")
+	// Using a default "data" directory in the current working directory, or configured via env
+	storagePath := os.Getenv("REPORTING_DATA_DIR")
+	if storagePath == "" {
+		storagePath = "data"
+	}
+
+	fileStorage, err := storage.NewLocalFileStorage(storagePath)
 	if err != nil {
 		logger.LogError(context.Background(), "failed to initialize file storage", err)
 		log.Fatalf("Failed to initialize file storage: %v", err)

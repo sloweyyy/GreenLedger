@@ -36,6 +36,10 @@ func NewLocalFileStorage(rootDir string) (*LocalFileStorage, error) {
 
 // Save saves content to a file at the specified path
 func (s *LocalFileStorage) Save(ctx context.Context, path string, content []byte) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	fullPath, err := s.validatePath(path)
 	if err != nil {
 		return err
@@ -58,6 +62,10 @@ func (s *LocalFileStorage) Save(ctx context.Context, path string, content []byte
 
 // Delete deletes a file at the specified path
 func (s *LocalFileStorage) Delete(ctx context.Context, path string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	fullPath, err := s.validatePath(path)
 	if err != nil {
 		return err
@@ -82,16 +90,7 @@ func (s *LocalFileStorage) validatePath(path string) (string, error) {
 	// Join with root directory
 	fullPath := filepath.Join(s.rootDir, cleanPath)
 
-	// Since s.rootDir is absolute (ensured in constructor), fullPath is absolute.
-	// However, to be extra safe and consistent with checks, we can resolve it again or just check prefixes.
-	// filepath.Join handles ".." elements by removing them if they are within the path,
-	// but if cleanPath starts with "../", Join might still result in something outside if we aren't careful?
-	// Actually filepath.Join("/root", "../foo") -> "/foo" which is outside "/root".
-	// So we must check if the resulting path starts with s.rootDir.
-
-	// We need to handle potential symlinks if we want to be 100% strict, but usually string prefix check is enough for basic protection
-	// assuming we trust the rootDir creation.
-
+	// Check if the resulting path is within the root directory
 	if !strings.HasPrefix(fullPath, s.rootDir) {
 		return "", fmt.Errorf("path traversal attempt: path %s is outside root %s", fullPath, s.rootDir)
 	}
@@ -99,7 +98,7 @@ func (s *LocalFileStorage) validatePath(path string) (string, error) {
 	// Also ensure that we don't accidentally match "/root_suffix" as a prefix of "/root"
 	// by checking for separator or exact match.
 	if len(fullPath) > len(s.rootDir) && fullPath[len(s.rootDir)] != filepath.Separator {
-		 return "", fmt.Errorf("path traversal attempt: path %s is outside root %s", fullPath, s.rootDir)
+		return "", fmt.Errorf("path traversal attempt: path %s is outside root %s", fullPath, s.rootDir)
 	}
 
 	return fullPath, nil
