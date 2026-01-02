@@ -128,7 +128,7 @@ install_dev_tools() {
     # Install Air for live reloading
     if ! command_exists air; then
         print_status "Installing Air for live reloading..."
-        go install github.com/cosmtrek/air@latest
+        go install github.com/air-verse/air@latest
         print_success "Air installed"
     else
         print_success "Air already installed"
@@ -144,13 +144,13 @@ install_dev_tools() {
     fi
     
     # Install gosec
-    if ! command_exists gosec; then
-        print_status "Installing gosec..."
-        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-        print_success "gosec installed"
-    else
-        print_success "gosec already installed"
-    fi
+    # if ! command_exists gosec; then
+    #     print_status "Installing gosec..."
+    #     go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+    #     print_success "gosec installed"
+    # else
+    #     print_success "gosec already installed"
+    # fi
 }
 
 # Function to fix dependencies
@@ -218,6 +218,7 @@ create_run_scripts() {
 # Run $service_name service
 
 cd services/$service_name
+export DB_TYPE=sqlite
 export DB_PATH="../../data/${service_name}.db"
 export LOG_LEVEL=debug
 export ENVIRONMENT=development

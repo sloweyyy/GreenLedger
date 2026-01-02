@@ -10,13 +10,13 @@ import (
 
 // Wallet represents a user's carbon credit wallet
 type Wallet struct {
-	ID               uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID               uuid.UUID       `gorm:"primary_key" json:"id"`
 	UserID           string          `gorm:"uniqueIndex;not null" json:"user_id"`
-	AvailableCredits decimal.Decimal `gorm:"type:decimal(15,3);not null;default:0" json:"available_credits"`
-	PendingCredits   decimal.Decimal `gorm:"type:decimal(15,3);not null;default:0" json:"pending_credits"`
-	TotalEarned      decimal.Decimal `gorm:"type:decimal(15,3);not null;default:0" json:"total_earned"`
-	TotalSpent       decimal.Decimal `gorm:"type:decimal(15,3);not null;default:0" json:"total_spent"`
-	LastUpdated      time.Time       `gorm:"not null;default:now()" json:"last_updated"`
+	AvailableCredits decimal.Decimal `gorm:"type:numeric;not null;default:0" json:"available_credits"`
+	PendingCredits   decimal.Decimal `gorm:"type:numeric;not null;default:0" json:"pending_credits"`
+	TotalEarned      decimal.Decimal `gorm:"type:numeric;not null;default:0" json:"total_earned"`
+	TotalSpent       decimal.Decimal `gorm:"type:numeric;not null;default:0" json:"total_spent"`
+	LastUpdated      time.Time       `gorm:"not null;default:CURRENT_TIMESTAMP" json:"last_updated"`
 	CreatedAt        time.Time       `json:"created_at"`
 	UpdatedAt        time.Time       `json:"updated_at"`
 	
@@ -26,18 +26,18 @@ type Wallet struct {
 
 // Transaction represents a credit transaction
 type Transaction struct {
-	ID            uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID            uuid.UUID       `gorm:"primary_key" json:"id"`
 	UserID        string          `gorm:"not null;index" json:"user_id"`
 	Type          string          `gorm:"not null;index" json:"type"`
 	Status        string          `gorm:"not null;index;default:'pending'" json:"status"`
-	Amount        decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"amount"`
-	BalanceAfter  decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"balance_after"`
+	Amount        decimal.Decimal `gorm:"type:numeric;not null" json:"amount"`
+	BalanceAfter  decimal.Decimal `gorm:"type:numeric;not null" json:"balance_after"`
 	Source        string          `gorm:"not null" json:"source"`
 	Description   string          `gorm:"not null" json:"description"`
 	ReferenceID   string          `gorm:"index" json:"reference_id"`
 	FromUserID    string          `gorm:"index" json:"from_user_id"`
 	ToUserID      string          `gorm:"index" json:"to_user_id"`
-	Metadata      string          `gorm:"type:jsonb" json:"metadata"`
+	Metadata      string          `gorm:"type:text" json:"metadata"`
 	ProcessedAt   *time.Time      `json:"processed_at"`
 	CreatedAt     time.Time       `json:"created_at"`
 	UpdatedAt     time.Time       `json:"updated_at"`
@@ -48,10 +48,10 @@ type Transaction struct {
 
 // TransactionBatch represents a batch of transactions for atomic processing
 type TransactionBatch struct {
-	ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID           uuid.UUID `gorm:"primary_key" json:"id"`
 	BatchID      string    `gorm:"uniqueIndex;not null" json:"batch_id"`
 	Status       string    `gorm:"not null;default:'pending'" json:"status"`
-	TotalAmount  decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"total_amount"`
+	TotalAmount  decimal.Decimal `gorm:"type:numeric;not null" json:"total_amount"`
 	Description  string    `json:"description"`
 	ProcessedAt  *time.Time `json:"processed_at"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -63,9 +63,9 @@ type TransactionBatch struct {
 
 // CreditReservation represents a temporary hold on credits
 type CreditReservation struct {
-	ID          uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID       `gorm:"primary_key" json:"id"`
 	UserID      string          `gorm:"not null;index" json:"user_id"`
-	Amount      decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"amount"`
+	Amount      decimal.Decimal `gorm:"type:numeric;not null" json:"amount"`
 	Purpose     string          `gorm:"not null" json:"purpose"`
 	ReferenceID string          `gorm:"index" json:"reference_id"`
 	ExpiresAt   time.Time       `gorm:"not null" json:"expires_at"`
@@ -77,12 +77,12 @@ type CreditReservation struct {
 
 // WalletSnapshot represents a point-in-time snapshot of wallet balances
 type WalletSnapshot struct {
-	ID               uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID               uuid.UUID       `gorm:"primary_key" json:"id"`
 	UserID           string          `gorm:"not null;index" json:"user_id"`
-	AvailableCredits decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"available_credits"`
-	PendingCredits   decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"pending_credits"`
-	TotalEarned      decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"total_earned"`
-	TotalSpent       decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"total_spent"`
+	AvailableCredits decimal.Decimal `gorm:"type:numeric;not null" json:"available_credits"`
+	PendingCredits   decimal.Decimal `gorm:"type:numeric;not null" json:"pending_credits"`
+	TotalEarned      decimal.Decimal `gorm:"type:numeric;not null" json:"total_earned"`
+	TotalSpent       decimal.Decimal `gorm:"type:numeric;not null" json:"total_spent"`
 	SnapshotDate     time.Time       `gorm:"not null;index" json:"snapshot_date"`
 	CreatedAt        time.Time       `json:"created_at"`
 }

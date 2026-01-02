@@ -9,9 +9,9 @@ import (
 
 // EcoActivity represents an eco-friendly activity
 type EcoActivity struct {
-	ID             uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID             uuid.UUID  `gorm:"primary_key" json:"id"`
 	UserID         string     `gorm:"not null;index" json:"user_id"`
-	ActivityTypeID uuid.UUID  `gorm:"type:uuid;not null;index" json:"activity_type_id"`
+	ActivityTypeID uuid.UUID  `gorm:"not null;index" json:"activity_type_id"`
 	Description    string     `gorm:"not null" json:"description"`
 	Duration       int        `gorm:"not null" json:"duration"` // in minutes
 	Distance       float64    `json:"distance"`                 // in kilometers (for transport activities)
@@ -23,7 +23,7 @@ type EcoActivity struct {
 	VerifiedAt     *time.Time `json:"verified_at"`
 	VerifiedBy     string     `json:"verified_by"`
 	Source         string     `gorm:"not null" json:"source"`        // manual, iot, webhook, etc.
-	SourceData     string     `gorm:"type:jsonb" json:"source_data"` // Original data from source
+	SourceData     string     `gorm:"type:text" json:"source_data"` // Original data from source
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 
@@ -33,7 +33,7 @@ type EcoActivity struct {
 
 // ActivityType represents types of eco-friendly activities
 type ActivityType struct {
-	ID                   uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID                   uuid.UUID `gorm:"primary_key" json:"id"`
 	Name                 string    `gorm:"uniqueIndex;not null" json:"name"`
 	Category             string    `gorm:"not null;index" json:"category"`
 	Description          string    `json:"description"`
@@ -51,8 +51,8 @@ type ActivityType struct {
 
 // CreditRule represents rules for calculating credits for activities
 type CreditRule struct {
-	ID             uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ActivityTypeID uuid.UUID  `gorm:"type:uuid;not null;index" json:"activity_type_id"`
+	ID             uuid.UUID  `gorm:"primary_key" json:"id"`
+	ActivityTypeID uuid.UUID  `gorm:"not null;index" json:"activity_type_id"`
 	Name           string     `gorm:"not null" json:"name"`
 	Description    string     `json:"description"`
 	MinValue       float64    `json:"min_value"`
@@ -71,7 +71,7 @@ type CreditRule struct {
 
 // ActivityChallenge represents challenges for eco-activities
 type ActivityChallenge struct {
-	ID            uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID            uuid.UUID `gorm:"primary_key" json:"id"`
 	Name          string    `gorm:"not null" json:"name"`
 	Description   string    `json:"description"`
 	StartDate     time.Time `gorm:"not null" json:"start_date"`
@@ -89,13 +89,13 @@ type ActivityChallenge struct {
 
 // ChallengeParticipant represents a user's participation in a challenge
 type ChallengeParticipant struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ChallengeID uuid.UUID  `gorm:"type:uuid;not null;index" json:"challenge_id"`
+	ID          uuid.UUID  `gorm:"primary_key" json:"id"`
+	ChallengeID uuid.UUID  `gorm:"not null;index" json:"challenge_id"`
 	UserID      string     `gorm:"not null;index" json:"user_id"`
 	Progress    float64    `gorm:"default:0" json:"progress"`
 	IsCompleted bool       `gorm:"default:false" json:"is_completed"`
 	CompletedAt *time.Time `json:"completed_at"`
-	JoinedAt    time.Time  `gorm:"default:now()" json:"joined_at"`
+	JoinedAt    time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"joined_at"`
 
 	// Relationship
 	Challenge ActivityChallenge `gorm:"foreignKey:ChallengeID" json:"-"`
@@ -103,7 +103,7 @@ type ChallengeParticipant struct {
 
 // IoTDevice represents IoT devices that can report activities
 type IoTDevice struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID        uuid.UUID  `gorm:"primary_key" json:"id"`
 	UserID    string     `gorm:"not null;index" json:"user_id"`
 	DeviceID  string     `gorm:"uniqueIndex;not null" json:"device_id"`
 	Name      string     `gorm:"not null" json:"name"`
@@ -111,7 +111,7 @@ type IoTDevice struct {
 	IsActive  bool       `gorm:"default:true" json:"is_active"`
 	LastSeen  *time.Time `json:"last_seen"`
 	APIKey    string     `gorm:"uniqueIndex;not null" json:"api_key"`
-	Settings  string     `gorm:"type:jsonb" json:"settings"`
+	Settings  string     `gorm:"type:text" json:"settings"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }
