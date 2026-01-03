@@ -9,7 +9,7 @@ import (
 
 // Calculation represents a carbon footprint calculation
 type Calculation struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"primary_key" json:"id"`
 	UserID      string    `gorm:"not null;index" json:"user_id"`
 	TotalCO2Kg  float64   `gorm:"not null" json:"total_co2_kg"`
 	Activities  []Activity `gorm:"foreignKey:CalculationID" json:"activities"`
@@ -19,19 +19,19 @@ type Calculation struct {
 
 // Activity represents an individual activity in a calculation
 type Activity struct {
-	ID             uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	CalculationID  uuid.UUID `gorm:"type:uuid;not null;index" json:"calculation_id"`
+	ID             uuid.UUID `gorm:"primary_key" json:"id"`
+	CalculationID  uuid.UUID `gorm:"not null;index" json:"calculation_id"`
 	ActivityType   string    `gorm:"not null" json:"activity_type"`
 	CO2Kg          float64   `gorm:"not null" json:"co2_kg"`
 	EmissionFactor float64   `gorm:"not null" json:"emission_factor"`
 	FactorSource   string    `gorm:"not null" json:"factor_source"`
-	ActivityData   string    `gorm:"type:jsonb" json:"activity_data"` // JSON data
+	ActivityData   string    `gorm:"type:text" json:"activity_data"` // JSON data
 	CreatedAt      time.Time `json:"created_at"`
 }
 
 // EmissionFactor represents emission factors for different activities
 type EmissionFactor struct {
-	ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID           uuid.UUID `gorm:"primary_key" json:"id"`
 	ActivityType string    `gorm:"not null;index" json:"activity_type"`
 	SubType      string    `gorm:"not null;index" json:"sub_type"`
 	FactorCO2    float64   `gorm:"not null" json:"factor_co2_per_unit"`

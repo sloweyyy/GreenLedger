@@ -357,3 +357,8 @@ func (s *CalculatorService) GetCalculationHistory(ctx context.Context, userID st
 func (s *CalculatorService) GetCalculationByID(ctx context.Context, id uuid.UUID) (*models.Calculation, error) {
 	return s.calculationRepo.GetByID(ctx, id)
 }
+
+// GetEmissionFactors retrieves all emission factors with optional filtering
+func (s *CalculatorService) GetEmissionFactors(ctx context.Context, activityType, location string, limit, offset int) ([]*models.EmissionFactor, int64, error) {
+	return s.emissionFactorRepo.GetAll(ctx, activityType, location, limit, offset)
+}

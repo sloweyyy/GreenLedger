@@ -10,7 +10,7 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"primary_key" json:"id"`
 	Email       string    `gorm:"uniqueIndex;not null" json:"email"`
 	Username    string    `gorm:"uniqueIndex;not null" json:"username"`
 	FirstName   string    `gorm:"not null" json:"first_name"`
@@ -30,7 +30,7 @@ type User struct {
 
 // Role represents a user role
 type Role struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"primary_key" json:"id"`
 	Name        string    `gorm:"uniqueIndex;not null" json:"name"`
 	Description string    `json:"description"`
 	Permissions []Permission `gorm:"many2many:role_permissions;" json:"permissions,omitempty"`
@@ -40,7 +40,7 @@ type Role struct {
 
 // Permission represents a system permission
 type Permission struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"primary_key" json:"id"`
 	Name        string    `gorm:"uniqueIndex;not null" json:"name"`
 	Resource    string    `gorm:"not null" json:"resource"`
 	Action      string    `gorm:"not null" json:"action"`
@@ -51,8 +51,8 @@ type Permission struct {
 
 // Session represents a user session
 type Session struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	ID        uuid.UUID `gorm:"primary_key" json:"id"`
+	UserID    uuid.UUID `gorm:"not null;index" json:"user_id"`
 	Token     string    `gorm:"uniqueIndex;not null" json:"token"`
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
 	IsActive  bool      `gorm:"default:true" json:"is_active"`
@@ -67,15 +67,15 @@ type Session struct {
 
 // UserProfile represents extended user profile information
 type UserProfile struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID      uuid.UUID `gorm:"type:uuid;uniqueIndex;not null" json:"user_id"`
+	ID          uuid.UUID `gorm:"primary_key" json:"id"`
+	UserID      uuid.UUID `gorm:"uniqueIndex;not null" json:"user_id"`
 	Avatar      string    `json:"avatar"`
 	Bio         string    `json:"bio"`
 	Location    string    `json:"location"`
 	Website     string    `json:"website"`
 	DateOfBirth *time.Time `json:"date_of_birth"`
 	PhoneNumber string    `json:"phone_number"`
-	Preferences map[string]interface{} `gorm:"type:jsonb" json:"preferences"`
+	Preferences map[string]interface{} `gorm:"type:text;serializer:json" json:"preferences"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	
@@ -85,8 +85,8 @@ type UserProfile struct {
 
 // PasswordResetToken represents a password reset token
 type PasswordResetToken struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	ID        uuid.UUID `gorm:"primary_key" json:"id"`
+	UserID    uuid.UUID `gorm:"not null;index" json:"user_id"`
 	Token     string    `gorm:"uniqueIndex;not null" json:"token"`
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
 	IsUsed    bool      `gorm:"default:false" json:"is_used"`
@@ -98,8 +98,8 @@ type PasswordResetToken struct {
 
 // EmailVerificationToken represents an email verification token
 type EmailVerificationToken struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID    uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	ID        uuid.UUID `gorm:"primary_key" json:"id"`
+	UserID    uuid.UUID `gorm:"not null;index" json:"user_id"`
 	Token     string    `gorm:"uniqueIndex;not null" json:"token"`
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
 	IsUsed    bool      `gorm:"default:false" json:"is_used"`

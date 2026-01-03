@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/glebarez/sqlite"
 	_ "github.com/lib/pq"
 	"github.com/sloweyyy/GreenLedger/shared/config"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
@@ -15,17 +16,16 @@ import (
 )
 
 // PostgresDB wraps gorm.DB with additional functionality
+// Note: Name kept as PostgresDB to avoid breaking changes in all services,
+// but it now supports multiple database drivers.
 type PostgresDB struct {
 	*gorm.DB
 	config *config.DatabaseConfig
 	logger *logger.Logger
 }
 
-// NewPostgresDB creates a new PostgreSQL database connection
+// NewPostgresDB creates a new database connection (PostgreSQL or SQLite)
 func NewPostgresDB(cfg *config.DatabaseConfig, log *logger.Logger) (*PostgresDB, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
-		cfg.Host, cfg.User, cfg.Password, cfg.DBName, cfg.Port, cfg.SSLMode)
-
 	// Configure GORM logger
 	gormLogLevel := gormLogger.Silent
 	if log != nil {
@@ -39,7 +39,33 @@ func NewPostgresDB(cfg *config.DatabaseConfig, log *logger.Logger) (*PostgresDB,
 		},
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
+	var dialector gorm.Dialector
+
+	if cfg.Type == "sqlite" {
+		// Use the configured path. If DBName is set (like in service specific configs),
+		// we might want to append it, but the DB_PATH usually points to a directory
+		// in the setup script: "export DB_PATH=../../data/${service_name}.db"
+		// The config.LoadConfig() defaults path to "./data/greenledger.db".
+		// Services override this via env vars.
+
+		// If Path ends in .db, use it directly. Otherwise treat as directory and append DBName.
+		dbPath := cfg.Path
+		if dbPath == "" {
+			dbPath = cfg.DBName + ".db"
+		}
+
+		dialector = sqlite.Open(dbPath)
+		if log != nil {
+			log.LogInfo(context.Background(), fmt.Sprintf("Using SQLite database at: %s", dbPath))
+		}
+	} else {
+		// Default to PostgreSQL
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
+			cfg.Host, cfg.User, cfg.Password, cfg.DBName, cfg.Port, cfg.SSLMode)
+		dialector = postgres.Open(dsn)
+	}
+
+	db, err := gorm.Open(dialector, gormConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

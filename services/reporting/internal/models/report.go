@@ -10,7 +10,7 @@ import (
 
 // Report represents a generated report
 type Report struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID  `gorm:"primary_key" json:"id"`
 	UserID      string     `gorm:"not null;index" json:"user_id"`
 	Type        string     `gorm:"not null;index" json:"type"`
 	Title       string     `gorm:"not null" json:"title"`
@@ -19,7 +19,7 @@ type Report struct {
 	Status      string     `gorm:"not null;default:'pending'" json:"status"`
 	FilePath    string     `json:"file_path"`
 	FileSize    int64      `json:"file_size"`
-	Parameters  string     `gorm:"type:jsonb" json:"parameters"`
+	Parameters  string     `gorm:"type:text" json:"parameters"`
 	StartDate   time.Time  `gorm:"not null" json:"start_date"`
 	EndDate     time.Time  `gorm:"not null" json:"end_date"`
 	GeneratedAt *time.Time `json:"generated_at"`
@@ -30,14 +30,14 @@ type Report struct {
 
 // ReportSchedule represents a scheduled report
 type ReportSchedule struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID  `gorm:"primary_key" json:"id"`
 	UserID      string     `gorm:"not null;index" json:"user_id"`
 	Name        string     `gorm:"not null" json:"name"`
 	Description string     `json:"description"`
 	ReportType  string     `gorm:"not null" json:"report_type"`
 	Format      string     `gorm:"not null" json:"format"`
 	Schedule    string     `gorm:"not null" json:"schedule"` // cron expression
-	Parameters  string     `gorm:"type:jsonb" json:"parameters"`
+	Parameters  string     `gorm:"type:text" json:"parameters"`
 	IsActive    bool       `gorm:"default:true" json:"is_active"`
 	LastRun     *time.Time `json:"last_run"`
 	NextRun     *time.Time `json:"next_run"`
@@ -50,13 +50,13 @@ type ReportSchedule struct {
 
 // ReportTemplate represents a report template
 type ReportTemplate struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"primary_key" json:"id"`
 	Name        string    `gorm:"uniqueIndex;not null" json:"name"`
 	Type        string    `gorm:"not null;index" json:"type"`
 	Title       string    `gorm:"not null" json:"title"`
 	Description string    `json:"description"`
 	Template    string    `gorm:"type:text;not null" json:"template"`
-	Parameters  string    `gorm:"type:jsonb" json:"parameters"`
+	Parameters  string    `gorm:"type:text" json:"parameters"`
 	IsActive    bool      `gorm:"default:true" json:"is_active"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -64,10 +64,10 @@ type ReportTemplate struct {
 
 // ReportData represents aggregated data for reports
 type ReportData struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ReportID  uuid.UUID `gorm:"type:uuid;not null;index" json:"report_id"`
+	ID        uuid.UUID `gorm:"primary_key" json:"id"`
+	ReportID  uuid.UUID `gorm:"not null;index" json:"report_id"`
 	DataType  string    `gorm:"not null" json:"data_type"`
-	Data      string    `gorm:"type:jsonb;not null" json:"data"`
+	Data      string    `gorm:"type:text;not null" json:"data"`
 	CreatedAt time.Time `json:"created_at"`
 
 	// Relationship

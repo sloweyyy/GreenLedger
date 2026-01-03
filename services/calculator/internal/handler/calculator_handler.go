@@ -247,9 +247,26 @@ func (h *CalculatorHandler) GetUserStats(c *gin.Context) {
 // @Failure 500 {object} ErrorResponse
 // @Router /calculator/emission-factors [get]
 func (h *CalculatorHandler) GetEmissionFactors(c *gin.Context) {
-	// This would need to be implemented in the service layer
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Emission factors endpoint - to be implemented",
+	activityType := c.Query("activity_type")
+	location := c.Query("location")
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+	factors, total, err := h.calculatorService.GetEmissionFactors(c.Request.Context(), activityType, location, limit, offset)
+	if err != nil {
+		h.logger.LogError(c.Request.Context(), "failed to get emission factors", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "Failed to get emission factors",
+			Details: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, EmissionFactorsResponse{
+		Factors: factors,
+		Total:   total,
+		Limit:   limit,
+		Offset:  offset,
 	})
 }
 
@@ -264,11 +281,26 @@ func (h *CalculatorHandler) GetEmissionFactors(c *gin.Context) {
 // @Router /calculator/emission-factors/{activity_type} [get]
 func (h *CalculatorHandler) GetEmissionFactorsByType(c *gin.Context) {
 	activityType := c.Param("activity_type")
-	
-	// This would need to be implemented in the service layer
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Emission factors by type endpoint - to be implemented",
-		"activity_type": activityType,
+	location := c.Query("location")
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+	factors, total, err := h.calculatorService.GetEmissionFactors(c.Request.Context(), activityType, location, limit, offset)
+	if err != nil {
+		h.logger.LogError(c.Request.Context(), "failed to get emission factors by type", err,
+			logger.String("activity_type", activityType))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "Failed to get emission factors",
+			Details: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, EmissionFactorsResponse{
+		Factors: factors,
+		Total:   total,
+		Limit:   limit,
+		Offset:  offset,
 	})
 }
 

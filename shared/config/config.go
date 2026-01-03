@@ -8,12 +8,14 @@ import (
 
 // DatabaseConfig holds database configuration
 type DatabaseConfig struct {
+	Type     string
 	Host     string
 	Port     int
 	User     string
 	Password string
 	DBName   string
 	SSLMode  string
+	Path     string // For SQLite
 }
 
 // RedisConfig holds Redis configuration
@@ -51,12 +53,14 @@ type Config struct {
 func LoadConfig() (*Config, error) {
 	config := &Config{
 		Database: DatabaseConfig{
+			Type:     getEnv("DB_TYPE", "postgres"),
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnvAsInt("DB_PORT", 5432),
 			User:     getEnv("DB_USER", "postgres"),
 			Password: getEnv("DB_PASSWORD", "password"),
 			DBName:   getEnv("DB_NAME", "greenledger"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			Path:     getEnv("DB_PATH", "./data/greenledger.db"),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),

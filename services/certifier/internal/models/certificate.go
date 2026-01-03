@@ -10,13 +10,13 @@ import (
 
 // Certificate represents a carbon offset certificate
 type Certificate struct {
-	ID                uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID                uuid.UUID       `gorm:"primary_key" json:"id"`
 	UserID            string          `gorm:"not null;index" json:"user_id"`
 	CertificateNumber string          `gorm:"uniqueIndex;not null" json:"certificate_number"`
 	Type              string          `gorm:"not null;index" json:"type"`
 	Status            string          `gorm:"not null;index;default:'pending'" json:"status"`
-	CarbonOffset      decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"carbon_offset"`
-	CreditsUsed       decimal.Decimal `gorm:"type:decimal(15,3);not null" json:"credits_used"`
+	CarbonOffset      decimal.Decimal `gorm:"type:numeric;not null" json:"carbon_offset"`
+	CreditsUsed       decimal.Decimal `gorm:"type:numeric;not null" json:"credits_used"`
 	ProjectName       string          `gorm:"not null" json:"project_name"`
 	ProjectType       string          `gorm:"not null" json:"project_type"`
 	ProjectLocation   string          `json:"project_location"`
@@ -41,13 +41,13 @@ type Certificate struct {
 
 // CertificateVerification represents a verification record for a certificate
 type CertificateVerification struct {
-	ID            uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	CertificateID uuid.UUID `gorm:"type:uuid;not null;index" json:"certificate_id"`
+	ID            uuid.UUID `gorm:"primary_key" json:"id"`
+	CertificateID uuid.UUID `gorm:"not null;index" json:"certificate_id"`
 	VerifierID    string    `gorm:"not null" json:"verifier_id"`
 	VerifierName  string    `gorm:"not null" json:"verifier_name"`
 	Status        string    `gorm:"not null" json:"status"`
 	Comments      string    `json:"comments"`
-	Evidence      string    `gorm:"type:jsonb" json:"evidence"`
+	Evidence      string    `gorm:"type:text" json:"evidence"`
 	VerifiedAt    time.Time `gorm:"not null" json:"verified_at"`
 	CreatedAt     time.Time `json:"created_at"`
 	
@@ -57,12 +57,12 @@ type CertificateVerification struct {
 
 // CertificateTransfer represents a transfer of certificate ownership
 type CertificateTransfer struct {
-	ID            uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	CertificateID uuid.UUID `gorm:"type:uuid;not null;index" json:"certificate_id"`
+	ID            uuid.UUID `gorm:"primary_key" json:"id"`
+	CertificateID uuid.UUID `gorm:"not null;index" json:"certificate_id"`
 	FromUserID    string    `gorm:"not null;index" json:"from_user_id"`
 	ToUserID      string    `gorm:"not null;index" json:"to_user_id"`
 	TransferType  string    `gorm:"not null" json:"transfer_type"`
-	Price         decimal.Decimal `gorm:"type:decimal(15,3)" json:"price"`
+	Price         decimal.Decimal `gorm:"type:numeric" json:"price"`
 	Currency      string    `json:"currency"`
 	Status        string    `gorm:"not null;default:'pending'" json:"status"`
 	TxHash        string    `gorm:"index" json:"tx_hash"`
@@ -76,13 +76,13 @@ type CertificateTransfer struct {
 
 // CertificateTemplate represents a template for certificate generation
 type CertificateTemplate struct {
-	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"primary_key" json:"id"`
 	Name        string    `gorm:"uniqueIndex;not null" json:"name"`
 	Type        string    `gorm:"not null;index" json:"type"`
 	Title       string    `gorm:"not null" json:"title"`
 	Description string    `json:"description"`
 	Template    string    `gorm:"type:text;not null" json:"template"`
-	Metadata    string    `gorm:"type:jsonb" json:"metadata"`
+	Metadata    string    `gorm:"type:text" json:"metadata"`
 	IsActive    bool      `gorm:"default:true" json:"is_active"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -90,7 +90,7 @@ type CertificateTemplate struct {
 
 // CertificateProject represents a carbon offset project
 type CertificateProject struct {
-	ID               uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID               uuid.UUID       `gorm:"primary_key" json:"id"`
 	Name             string          `gorm:"not null" json:"name"`
 	Type             string          `gorm:"not null;index" json:"type"`
 	Description      string          `json:"description"`
@@ -101,9 +101,9 @@ type CertificateProject struct {
 	Standard         string          `json:"standard"`
 	Methodology      string          `json:"methodology"`
 	VintageYear      int             `json:"vintage_year"`
-	TotalCredits     decimal.Decimal `gorm:"type:decimal(15,3)" json:"total_credits"`
-	AvailableCredits decimal.Decimal `gorm:"type:decimal(15,3)" json:"available_credits"`
-	PricePerCredit   decimal.Decimal `gorm:"type:decimal(10,2)" json:"price_per_credit"`
+	TotalCredits     decimal.Decimal `gorm:"type:numeric" json:"total_credits"`
+	AvailableCredits decimal.Decimal `gorm:"type:numeric" json:"available_credits"`
+	PricePerCredit   decimal.Decimal `gorm:"type:numeric" json:"price_per_credit"`
 	Currency         string          `gorm:"default:'USD'" json:"currency"`
 	IsActive         bool            `gorm:"default:true" json:"is_active"`
 	StartDate        time.Time       `json:"start_date"`
