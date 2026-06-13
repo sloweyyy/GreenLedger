@@ -1,3 +1,4 @@
+// Package service implements the carbon-credit wallet business logic and event publishing.
 package service
 
 import (
@@ -7,6 +8,7 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 

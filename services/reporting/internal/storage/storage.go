@@ -1,3 +1,4 @@
+// Package storage provides file-storage abstractions for generated reports.
 package storage
 
 import (
@@ -22,7 +23,7 @@ type LocalFileStorage struct {
 // NewLocalFileStorage creates a new LocalFileStorage
 func NewLocalFileStorage(rootDir string) (*LocalFileStorage, error) {
 	// Ensure root directory exists
-	if err := os.MkdirAll(rootDir, 0755); err != nil {
+	if err := os.MkdirAll(rootDir, 0o750); err != nil {
 		return nil, fmt.Errorf("failed to create root directory: %w", err)
 	}
 
@@ -48,7 +49,7 @@ func (s *LocalFileStorage) Save(ctx context.Context, path string, content []byte
 	dir := filepath.Dir(fullPath)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
@@ -58,7 +59,7 @@ func (s *LocalFileStorage) Save(ctx context.Context, path string, content []byte
 	}
 
 	// Write file
-	if err := os.WriteFile(fullPath, content, 0644); err != nil {
+	if err := os.WriteFile(fullPath, content, 0o600); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 

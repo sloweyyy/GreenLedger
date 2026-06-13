@@ -1,3 +1,4 @@
+// Package models defines the domain entities and persistence mappings for the certifier service.
 package models
 
 import (
@@ -172,7 +173,7 @@ const (
 	CertificateStatusIssued    = "issued"
 	CertificateStatusVerified  = "verified"
 	CertificateStatusRetired   = "retired"
-	CertificateStatusCancelled = "cancelled"
+	CertificateStatusCancelled = "canceled"
 	CertificateStatusExpired   = "expired"
 )
 
@@ -189,7 +190,7 @@ const (
 	TransferStatusPending   = "pending"
 	TransferStatusCompleted = "completed"
 	TransferStatusFailed    = "failed"
-	TransferStatusCancelled = "cancelled"
+	TransferStatusCancelled = "canceled"
 )
 
 // Verification statuses

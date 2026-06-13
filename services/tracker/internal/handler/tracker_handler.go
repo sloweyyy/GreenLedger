@@ -1,3 +1,4 @@
+// Package handler provides the HTTP handlers for the tracker service API.
 package handler
 
 import (
@@ -7,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
 	"github.com/sloweyyy/GreenLedger/services/tracker/internal/service"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/sloweyyy/GreenLedger/shared/middleware"

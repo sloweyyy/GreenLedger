@@ -1,3 +1,4 @@
+// Package models defines the domain entities and persistence mappings for the wallet service.
 package models
 
 import (
@@ -147,7 +148,7 @@ const (
 	TransactionStatusPending   = "pending"
 	TransactionStatusCompleted = "completed"
 	TransactionStatusFailed    = "failed"
-	TransactionStatusCancelled = "cancelled"
+	TransactionStatusCancelled = "canceled"
 	TransactionStatusExpired   = "expired"
 )
 
@@ -170,7 +171,7 @@ const (
 	BatchStatusPending   = "pending"
 	BatchStatusProcessed = "processed"
 	BatchStatusFailed    = "failed"
-	BatchStatusCancelled = "cancelled"
+	BatchStatusCancelled = "canceled"
 )
 
 // Helper methods for Wallet

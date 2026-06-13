@@ -1,3 +1,4 @@
+// Package handler provides the HTTP handlers for the user-auth service API.
 package handler
 
 import (
@@ -5,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/service"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/sloweyyy/GreenLedger/shared/middleware"

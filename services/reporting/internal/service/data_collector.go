@@ -1,3 +1,4 @@
+// Package service implements report generation, data collection and rendering business logic.
 package service
 
 import (
@@ -6,6 +7,7 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/database"

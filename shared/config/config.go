@@ -1,3 +1,4 @@
+// Package config loads and validates service configuration from the environment.
 package config
 
 import (

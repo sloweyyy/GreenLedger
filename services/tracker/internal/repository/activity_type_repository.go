@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/tracker/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // ActivityTypeRepository handles activity type data operations

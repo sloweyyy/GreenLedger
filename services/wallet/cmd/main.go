@@ -1,3 +1,4 @@
+// Package main is the entrypoint for the GreenLedger wallet service.
 package main
 
 import (
@@ -12,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
+
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/handler"
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/repository"

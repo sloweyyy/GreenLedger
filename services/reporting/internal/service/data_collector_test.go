@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 // MockReportingRepository is a mock implementation of ReportingRepository

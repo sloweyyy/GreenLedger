@@ -1,3 +1,4 @@
+// Package middleware provides Gin HTTP middleware for authentication, logging and metrics.
 package middleware
 
 import (
@@ -7,8 +8,40 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
+
+// contextKey is a private type for request-context keys, avoiding collisions
+// with keys defined in other packages (see context.WithValue documentation).
+type contextKey string
+
+const (
+	userIDKey    contextKey = "user_id"
+	userEmailKey contextKey = "user_email"
+	userRolesKey contextKey = "user_roles"
+)
+
+// UserIDFromContext returns the authenticated user ID stored in the request
+// context by AuthMiddleware, or ("", false) if it is absent.
+func UserIDFromContext(ctx context.Context) (string, bool) {
+	v, ok := ctx.Value(userIDKey).(string)
+	return v, ok
+}
+
+// UserEmailFromContext returns the authenticated user email stored in the
+// request context by AuthMiddleware, or ("", false) if it is absent.
+func UserEmailFromContext(ctx context.Context) (string, bool) {
+	v, ok := ctx.Value(userEmailKey).(string)
+	return v, ok
+}
+
+// UserRolesFromContext returns the authenticated user roles stored in the
+// request context by AuthMiddleware, or (nil, false) if they are absent.
+func UserRolesFromContext(ctx context.Context) ([]string, bool) {
+	v, ok := ctx.Value(userRolesKey).([]string)
+	return v, ok
+}
 
 // AuthMiddleware provides JWT authentication middleware
 type AuthMiddleware struct {
@@ -57,9 +90,9 @@ func (a *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		c.Set("user_roles", claims.Roles)
 
 		// Add to request context for downstream services
-		ctx := context.WithValue(c.Request.Context(), "user_id", claims.UserID)
-		ctx = context.WithValue(ctx, "user_email", claims.Email)
-		ctx = context.WithValue(ctx, "user_roles", claims.Roles)
+		ctx := context.WithValue(c.Request.Context(), userIDKey, claims.UserID)
+		ctx = context.WithValue(ctx, userEmailKey, claims.Email)
+		ctx = context.WithValue(ctx, userRolesKey, claims.Roles)
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
@@ -92,9 +125,10 @@ func (a *AuthMiddleware) RequireRole(requiredRole string) gin.HandlerFunc {
 		}
 
 		if !hasRole {
-			userID, _ := c.Get("user_id")
+			userIDVal, _ := c.Get("user_id")
+			userID, _ := userIDVal.(string)
 			a.logger.LogWarn(c.Request.Context(), "insufficient permissions",
-				logger.String("user_id", userID.(string)),
+				logger.String("user_id", userID),
 				logger.String("required_role", requiredRole),
 				logger.Any("user_roles", userRoles))
 			c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})

@@ -1,3 +1,4 @@
+// Package models defines the domain entities and persistence mappings for the calculator service.
 package models
 
 import (

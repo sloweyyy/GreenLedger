@@ -1,3 +1,4 @@
+// Package service implements authentication, authorization and user-management business logic.
 package service
 
 import (
@@ -9,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"

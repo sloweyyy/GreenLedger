@@ -1,3 +1,4 @@
+// Package service implements the certificate issuance and transfer business logic.
 package service
 
 import (
@@ -7,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+
 	"github.com/sloweyyy/GreenLedger/services/certifier/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/certifier/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"

@@ -1,3 +1,4 @@
+// Package logger provides structured, context-aware logging built on log/slog.
 package logger
 
 import (
@@ -39,22 +40,22 @@ func New(level string) *Logger {
 
 // WithContext adds context to the logger
 func (l *Logger) WithContext(ctx context.Context) *Logger {
-	return &Logger{Logger: l.Logger.With("trace_id", getTraceID(ctx))}
+	return &Logger{Logger: l.With("trace_id", getTraceID(ctx))}
 }
 
 // WithService adds service name to the logger
 func (l *Logger) WithService(serviceName string) *Logger {
-	return &Logger{Logger: l.Logger.With("service", serviceName)}
+	return &Logger{Logger: l.With("service", serviceName)}
 }
 
 // WithRequestID adds request ID to the logger
 func (l *Logger) WithRequestID(requestID string) *Logger {
-	return &Logger{Logger: l.Logger.With("request_id", requestID)}
+	return &Logger{Logger: l.With("request_id", requestID)}
 }
 
 // WithUserID adds user ID to the logger
 func (l *Logger) WithUserID(userID string) *Logger {
-	return &Logger{Logger: l.Logger.With("user_id", userID)}
+	return &Logger{Logger: l.With("user_id", userID)}
 }
 
 // LogError logs an error with additional context
@@ -63,7 +64,7 @@ func (l *Logger) LogError(ctx context.Context, msg string, err error, attrs ...s
 	for _, attr := range attrs {
 		args = append(args, attr.Key, attr.Value)
 	}
-	l.Logger.ErrorContext(ctx, msg, args...)
+	l.ErrorContext(ctx, msg, args...)
 }
 
 // LogInfo logs an info message with context
@@ -72,7 +73,7 @@ func (l *Logger) LogInfo(ctx context.Context, msg string, attrs ...slog.Attr) {
 	for _, attr := range attrs {
 		args = append(args, attr.Key, attr.Value)
 	}
-	l.Logger.InfoContext(ctx, msg, args...)
+	l.InfoContext(ctx, msg, args...)
 }
 
 // LogDebug logs a debug message with context
@@ -81,7 +82,7 @@ func (l *Logger) LogDebug(ctx context.Context, msg string, attrs ...slog.Attr) {
 	for _, attr := range attrs {
 		args = append(args, attr.Key, attr.Value)
 	}
-	l.Logger.DebugContext(ctx, msg, args...)
+	l.DebugContext(ctx, msg, args...)
 }
 
 // LogWarn logs a warning message with context
@@ -90,7 +91,7 @@ func (l *Logger) LogWarn(ctx context.Context, msg string, attrs ...slog.Attr) {
 	for _, attr := range attrs {
 		args = append(args, attr.Key, attr.Value)
 	}
-	l.Logger.WarnContext(ctx, msg, args...)
+	l.WarnContext(ctx, msg, args...)
 }
 
 // Helper function to extract trace ID from context

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/storage"
@@ -129,8 +130,10 @@ func (s *ReportingService) GenerateReport(ctx context.Context, req *GenerateRepo
 		return nil, fmt.Errorf("failed to create report: %w", err)
 	}
 
-	// Generate report asynchronously
-	go s.generateReportAsync(context.Background(), report)
+	// Generate report asynchronously. Detach the request's cancellation so the
+	// background job survives the HTTP response, while preserving context values
+	// (e.g. trace IDs) for logging continuity.
+	go s.generateReportAsync(context.WithoutCancel(ctx), report)
 
 	return s.reportToResponse(report), nil
 }

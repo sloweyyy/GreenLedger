@@ -1,3 +1,4 @@
+// Package main is the entrypoint for the GreenLedger tracker service.
 package main
 
 import (
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/sloweyyy/GreenLedger/services/tracker/internal/handler"
 	"github.com/sloweyyy/GreenLedger/services/tracker/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/tracker/internal/repository"
@@ -158,7 +160,7 @@ func main() {
 
 	// Initialize default activity types
 	go func() {
-		if err := initializeActivityTypes(context.Background(), activityTypeRepo, creditRuleRepo, logger); err != nil {
+		if err := initializeActivityTypes(context.Background(), activityTypeRepo, logger); err != nil {
 			logger.LogError(context.Background(), "failed to initialize activity types", err)
 		}
 	}()
@@ -187,8 +189,8 @@ func main() {
 	logger.LogInfo(context.Background(), "tracker service stopped")
 }
 
-// initializeActivityTypes initializes default activity types and credit rules
-func initializeActivityTypes(ctx context.Context, activityTypeRepo *repository.ActivityTypeRepository, creditRuleRepo *repository.CreditRuleRepository, logger *sharedLogger.Logger) error {
+// initializeActivityTypes seeds the default set of activity types if none exist.
+func initializeActivityTypes(ctx context.Context, activityTypeRepo *repository.ActivityTypeRepository, logger *sharedLogger.Logger) error {
 	// Check if activity types already exist
 	activityTypes, err := activityTypeRepo.GetAll(ctx)
 	if err != nil {

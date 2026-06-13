@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"

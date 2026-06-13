@@ -1,3 +1,4 @@
+// Package repository provides data-access implementations for the user-auth service.
 package repository
 
 import (
@@ -5,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // RoleRepository handles role data operations

@@ -1,3 +1,4 @@
+// Package repository provides data-access implementations for the calculator service.
 package repository
 
 import (
@@ -6,10 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // CalculationRepository handles calculation data operations

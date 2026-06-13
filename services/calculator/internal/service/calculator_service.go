@@ -1,3 +1,4 @@
+// Package service implements the carbon-footprint calculation business logic.
 package service
 
 import (
@@ -7,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/calculator/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"

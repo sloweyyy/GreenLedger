@@ -1,3 +1,4 @@
+// Package repository provides data-access implementations for the certifier service.
 package repository
 
 import (
@@ -5,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/certifier/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // CertificateRepository handles certificate data operations

@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // WalletRepository handles wallet data operations

@@ -1,3 +1,4 @@
+// Package main is the entrypoint for the GreenLedger reporting service.
 package main
 
 import (
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/handler"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"

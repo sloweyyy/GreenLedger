@@ -1,3 +1,4 @@
+// Package repository provides data-access implementations for the reporting service.
 package repository
 
 import (
@@ -7,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 )
@@ -359,10 +361,7 @@ func (r *PostgresReportingRepository) GetActivityStats(ctx context.Context, user
 
 	for _, row := range rows {
 		totalCount += row.Count
-		dailyActivities = append(dailyActivities, DailyActivity{
-			Day:   row.Day,
-			Count: row.Count,
-		})
+		dailyActivities = append(dailyActivities, DailyActivity(row))
 	}
 
 	return totalCount, dailyActivities, nil
