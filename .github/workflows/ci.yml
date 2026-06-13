@@ -386,7 +386,9 @@ jobs:
           if [ -d "tests/load" ]; then
             echo "Running load tests..."
             cd tests/load
-            go test -v -timeout=10m ./...
+            # The load suite is gated behind the 'load' build tag (it needs a
+            # running deployment, started above); enable it explicitly here.
+            go test -v -tags load -timeout=10m ./...
           else
             echo "No load tests found, skipping..."
           fi
