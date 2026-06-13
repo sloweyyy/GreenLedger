@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: "1.23.0"
+  GO_VERSION: "1.25.11"
 
 jobs:
   # Job 1: Static Application Security Testing (SAST)

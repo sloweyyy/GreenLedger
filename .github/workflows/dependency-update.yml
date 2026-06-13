@@ -18,7 +18,7 @@ on:
           - all
 
 env:
-  GO_VERSION: "1.23.0"
+  GO_VERSION: "1.25.11"
 
 jobs:
   # Job 1: Update Go Dependencies
