@@ -1,3 +1,10 @@
+//go:build load
+
+// Package load contains the GreenLedger load/stress test suite. It drives real
+// HTTP traffic against a running deployment, so it is gated behind the "load"
+// build tag and excluded from the default `go test ./...` run. Execute it with:
+//
+//	go test -tags load ./tests/load/...
 package load
 
 import (
