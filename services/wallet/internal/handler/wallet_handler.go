@@ -7,10 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/service"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/sloweyyy/GreenLedger/shared/middleware"
-	"github.com/shopspring/decimal"
 )
 
 // WalletHandler handles HTTP requests for wallet operations

@@ -9,12 +9,12 @@ import (
 
 // Calculation represents a carbon footprint calculation
 type Calculation struct {
-	ID          uuid.UUID `gorm:"primary_key" json:"id"`
-	UserID      string    `gorm:"not null;index" json:"user_id"`
-	TotalCO2Kg  float64   `gorm:"not null" json:"total_co2_kg"`
-	Activities  []Activity `gorm:"foreignKey:CalculationID" json:"activities"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID         uuid.UUID  `gorm:"primary_key" json:"id"`
+	UserID     string     `gorm:"not null;index" json:"user_id"`
+	TotalCO2Kg float64    `gorm:"not null" json:"total_co2_kg"`
+	Activities []Activity `gorm:"foreignKey:CalculationID" json:"activities"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
 }
 
 // Activity represents an individual activity in a calculation
@@ -45,9 +45,9 @@ type EmissionFactor struct {
 
 // VehicleActivityData represents vehicle travel activity data
 type VehicleActivityData struct {
-	VehicleType       string  `json:"vehicle_type"`
-	DistanceKm        float64 `json:"distance_km"`
-	FuelEfficiencyL   float64 `json:"fuel_efficiency_l_per_100km,omitempty"`
+	VehicleType     string  `json:"vehicle_type"`
+	DistanceKm      float64 `json:"distance_km"`
+	FuelEfficiencyL float64 `json:"fuel_efficiency_l_per_100km,omitempty"`
 }
 
 // ElectricityActivityData represents electricity usage activity data
@@ -119,11 +119,11 @@ func (EmissionFactor) TableName() string {
 
 // Activity type constants
 const (
-	ActivityTypeVehicleTravel   = "vehicle_travel"
-	ActivityTypeElectricity     = "electricity_usage"
-	ActivityTypePurchase        = "purchase"
-	ActivityTypeFlight          = "flight"
-	ActivityTypeHeating         = "heating"
+	ActivityTypeVehicleTravel = "vehicle_travel"
+	ActivityTypeElectricity   = "electricity_usage"
+	ActivityTypePurchase      = "purchase"
+	ActivityTypeFlight        = "flight"
+	ActivityTypeHeating       = "heating"
 )
 
 // Vehicle type constants

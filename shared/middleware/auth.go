@@ -93,7 +93,7 @@ func (a *AuthMiddleware) RequireRole(requiredRole string) gin.HandlerFunc {
 
 		if !hasRole {
 			userID, _ := c.Get("user_id")
-			a.logger.LogWarn(c.Request.Context(), "insufficient permissions", 
+			a.logger.LogWarn(c.Request.Context(), "insufficient permissions",
 				logger.String("user_id", userID.(string)),
 				logger.String("required_role", requiredRole),
 				logger.Any("user_roles", userRoles))
@@ -118,7 +118,7 @@ func (a *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 		claims, err := a.validateToken(token)
 		if err != nil {
 			// Log but don't fail the request
-			a.logger.LogDebug(c.Request.Context(), "optional auth failed", 
+			a.logger.LogDebug(c.Request.Context(), "optional auth failed",
 				logger.String("error", err.Error()))
 			c.Next()
 			return
@@ -171,7 +171,7 @@ func GetUserID(c *gin.Context) (string, bool) {
 	if !exists {
 		return "", false
 	}
-	
+
 	id, ok := userID.(string)
 	return id, ok
 }
@@ -182,7 +182,7 @@ func GetUserEmail(c *gin.Context) (string, bool) {
 	if !exists {
 		return "", false
 	}
-	
+
 	userEmail, ok := email.(string)
 	return userEmail, ok
 }
@@ -193,7 +193,7 @@ func GetUserRoles(c *gin.Context) ([]string, bool) {
 	if !exists {
 		return nil, false
 	}
-	
+
 	userRoles, ok := roles.([]string)
 	return userRoles, ok
 }

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/segmentio/kafka-go"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // KafkaEventPublisher implements EventPublisher using Kafka
@@ -239,7 +239,7 @@ func (c *EventConsumer) ConsumeEvents(ctx context.Context, handler func(ctx cont
 					c.logger.LogError(ctx, "failed to unmarshal credit earned event", err)
 					continue
 				}
-				
+
 				// Process credit earned event - credit user's wallet
 				if err := handler(ctx, &event); err != nil {
 					c.logger.LogError(ctx, "failed to handle credit earned event", err)
@@ -260,10 +260,10 @@ func (c *EventConsumer) Close() error {
 
 // CreditEarnedEvent represents a credit earned event from tracker service
 type CreditEarnedEvent struct {
-	UserID        string  `json:"user_id"`
-	ActivityID    string  `json:"activity_id"`
-	ActivityType  string  `json:"activity_type"`
-	CreditsEarned float64 `json:"credits_earned"`
-	Description   string  `json:"description"`
+	UserID        string    `json:"user_id"`
+	ActivityID    string    `json:"activity_id"`
+	ActivityType  string    `json:"activity_type"`
+	CreditsEarned float64   `json:"credits_earned"`
+	Description   string    `json:"description"`
 	Timestamp     time.Time `json:"timestamp"`
 }

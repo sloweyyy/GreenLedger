@@ -40,11 +40,11 @@ func (r *ActivityTypeRepository) Create(ctx context.Context, activityType *model
 // GetByID retrieves an activity type by ID
 func (r *ActivityTypeRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.ActivityType, error) {
 	var activityType models.ActivityType
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("CreditRules").
 		First(&activityType, "id = ?", id).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -58,11 +58,11 @@ func (r *ActivityTypeRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 // GetByName retrieves an activity type by name
 func (r *ActivityTypeRepository) GetByName(ctx context.Context, name string) (*models.ActivityType, error) {
 	var activityType models.ActivityType
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("CreditRules").
 		First(&activityType, "name = ?", name).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -76,13 +76,13 @@ func (r *ActivityTypeRepository) GetByName(ctx context.Context, name string) (*m
 // GetAll retrieves all activity types
 func (r *ActivityTypeRepository) GetAll(ctx context.Context) ([]*models.ActivityType, error) {
 	var activityTypes []*models.ActivityType
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("CreditRules").
 		Where("is_active = true").
 		Order("category, name").
 		Find(&activityTypes).Error
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get activity types: %w", err)
 	}
@@ -93,13 +93,13 @@ func (r *ActivityTypeRepository) GetAll(ctx context.Context) ([]*models.Activity
 // GetByCategory retrieves activity types by category
 func (r *ActivityTypeRepository) GetByCategory(ctx context.Context, category string) ([]*models.ActivityType, error) {
 	var activityTypes []*models.ActivityType
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("CreditRules").
 		Where("category = ? AND is_active = true", category).
 		Order("name").
 		Find(&activityTypes).Error
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get activity types by category: %w", err)
 	}
@@ -175,7 +175,7 @@ func (r *CreditRuleRepository) Create(ctx context.Context, rule *models.CreditRu
 // GetByID retrieves a credit rule by ID
 func (r *CreditRuleRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.CreditRule, error) {
 	var rule models.CreditRule
-	
+
 	err := r.db.WithContext(ctx).First(&rule, "id = ?", id).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -190,12 +190,12 @@ func (r *CreditRuleRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 // GetActiveRulesByActivityType retrieves active credit rules for an activity type
 func (r *CreditRuleRepository) GetActiveRulesByActivityType(ctx context.Context, activityTypeID uuid.UUID) ([]*models.CreditRule, error) {
 	var rules []*models.CreditRule
-	
+
 	err := r.db.WithContext(ctx).
 		Where("activity_type_id = ? AND is_active = true AND (valid_to IS NULL OR valid_to > NOW())", activityTypeID).
 		Order("credits_per_unit DESC").
 		Find(&rules).Error
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credit rules: %w", err)
 	}

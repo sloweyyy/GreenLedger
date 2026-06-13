@@ -45,11 +45,11 @@ func (r *SessionRepository) Create(ctx context.Context, session *models.Session)
 // GetByToken retrieves a session by token
 func (r *SessionRepository) GetByToken(ctx context.Context, token string) (*models.Session, error) {
 	var session models.Session
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("User").
 		First(&session, "token = ?", token).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -64,12 +64,12 @@ func (r *SessionRepository) GetByToken(ctx context.Context, token string) (*mode
 // GetByUserID retrieves active sessions for a user
 func (r *SessionRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*models.Session, error) {
 	var sessions []*models.Session
-	
+
 	err := r.db.WithContext(ctx).
 		Where("user_id = ? AND is_active = true AND expires_at > ?", userID, time.Now()).
 		Order("created_at DESC").
 		Find(&sessions).Error
-	
+
 	if err != nil {
 		r.logger.LogError(ctx, "failed to get sessions by user ID", err,
 			logger.String("user_id", userID.String()))

@@ -227,10 +227,10 @@ func (h *CalculatorHandler) GetUserStats(c *gin.Context) {
 	// stats, err := h.calculatorService.GetUserStats(c.Request.Context(), userID, startDate, endDate)
 	// For now, return a placeholder
 	c.JSON(http.StatusOK, gin.H{
-		"message": "User stats endpoint - to be implemented",
-		"user_id": userID,
+		"message":    "User stats endpoint - to be implemented",
+		"user_id":    userID,
 		"start_date": startDate,
-		"end_date": endDate,
+		"end_date":   endDate,
 	})
 }
 

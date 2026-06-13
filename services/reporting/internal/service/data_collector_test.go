@@ -141,7 +141,7 @@ func TestCollectSummaryData_MostLeastActiveDays(t *testing.T) {
 
 	dataTie, err := collector.CollectSummaryData(ctx, userID, startDate, endDate)
 	assert.NoError(t, err)
-	assert.Equal(t, day4, dataTie.MostActiveDay) // Expecting earliest day (first in list)
+	assert.Equal(t, day4, dataTie.MostActiveDay)  // Expecting earliest day (first in list)
 	assert.Equal(t, day5, dataTie.LeastActiveDay) // Expecting latest day (last in list)
 
 	// Test Case 3: Single day activity

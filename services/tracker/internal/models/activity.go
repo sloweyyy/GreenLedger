@@ -22,7 +22,7 @@ type EcoActivity struct {
 	IsVerified     bool       `gorm:"default:false" json:"is_verified"`
 	VerifiedAt     *time.Time `json:"verified_at"`
 	VerifiedBy     string     `json:"verified_by"`
-	Source         string     `gorm:"not null" json:"source"`        // manual, iot, webhook, etc.
+	Source         string     `gorm:"not null" json:"source"`       // manual, iot, webhook, etc.
 	SourceData     string     `gorm:"type:text" json:"source_data"` // Original data from source
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`

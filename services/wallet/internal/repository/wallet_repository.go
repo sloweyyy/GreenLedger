@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -45,7 +45,7 @@ func (r *WalletRepository) Create(ctx context.Context, wallet *models.Wallet) er
 // GetByUserID retrieves a wallet by user ID
 func (r *WalletRepository) GetByUserID(ctx context.Context, userID string) (*models.Wallet, error) {
 	var wallet models.Wallet
-	
+
 	err := r.db.WithContext(ctx).First(&wallet, "user_id = ?", userID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

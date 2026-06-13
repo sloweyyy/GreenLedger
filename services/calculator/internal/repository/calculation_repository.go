@@ -48,11 +48,11 @@ func (r *CalculationRepository) Create(ctx context.Context, calculation *models.
 // GetByID retrieves a calculation by ID
 func (r *CalculationRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Calculation, error) {
 	var calculation models.Calculation
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("Activities").
 		First(&calculation, "id = ?", id).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -173,7 +173,7 @@ func (r *CalculationRepository) Delete(ctx context.Context, id uuid.UUID) error 
 // GetUserStats retrieves calculation statistics for a user
 func (r *CalculationRepository) GetUserStats(ctx context.Context, userID string, startDate, endDate time.Time) (*UserCalculationStats, error) {
 	var stats UserCalculationStats
-	
+
 	// Get total calculations and CO2
 	var result struct {
 		TotalCalculations int64   `gorm:"column:total_calculations"`
