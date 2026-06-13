@@ -161,3 +161,7 @@ scripts/dev/
 # Helm charts values
 charts/*/values-local.yaml
 charts/*/values-dev.yaml
+
+# CI-generated artifacts (produced by .github/workflows/dependency-update.yml)
+artifacts/
+pr-description.md
