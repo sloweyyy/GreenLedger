@@ -16,81 +16,34 @@ jobs:
   lint:
     name: 🔍 Code Quality & Linting
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Each Go module is linted independently; golangci-lint does not analyse
+        # all go.work modules from the repo root.
+        module:
+          - shared
+          - services/calculator
+          - services/certifier
+          - services/reporting
+          - services/tracker
+          - services/user-auth
+          - services/wallet
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: 🔥 Force clean Go module cache (pre-cache)
-        run: |
-          # Force delete cache directories to prevent tar conflicts during cache restore
-          sudo rm -rf ~/go/pkg/mod ~/.cache/go-build /tmp/go-cache || true
-          sudo mkdir -p ~/go/pkg/mod ~/.cache/go-build || true
-          sudo chown -R $USER:$USER ~/go ~/.cache || true
-          echo "Cache directories force-cleaned and recreated"
-        continue-on-error: true
-
-      - name: 📦 Cache Go modules
-        uses: actions/cache@v4
+      - name: 🔍 Run golangci-lint (${{ matrix.module }})
+        uses: golangci/golangci-lint-action@v8
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-lint-${{ env.GO_VERSION }}-${{ github.run_id }}-${{ hashFiles('**/go.sum', '**/go.mod') }}
-          restore-keys: |
-            ${{ runner.os }}-go-lint-${{ env.GO_VERSION }}-
-            ${{ runner.os }}-go-lint-
-            ${{ runner.os }}-go-
-
-      - name: 📥 Download dependencies and tidy modules
-        run: |
-          # Root module
-          echo "📦 Processing root module..."
-          go mod download
-          go mod tidy
-
-          # Shared module
-          echo "📦 Processing shared module..."
-          if [ -d "shared" ] && [ -f "shared/go.mod" ]; then
-            cd shared
-            go mod download
-            go mod tidy
-            cd ..
-          fi
-
-          # Service modules
-          for service_dir in services/*/; do
-            if [ -d "$service_dir" ] && [ -f "$service_dir/go.mod" ]; then
-              service_name=$(basename "$service_dir")
-              echo "📦 Processing $service_name module..."
-              cd "$service_dir"
-              go mod download
-              go mod tidy
-              cd ../..
-            fi
-          done
-
-      - name: 🔍 Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
+          version: v2.12.2
+          working-directory: ${{ matrix.module }}
           args: --timeout=5m
-
-      - name: 🔒 Run gosec security scanner
-        uses: securego/gosec@master
-        with:
-          args: "-no-fail -fmt sarif -out gosec.sarif -buildvcs=false ./..."
-        continue-on-error: true
-
-      - name: 📊 Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('gosec.sarif') != ''
-        with:
-          sarif_file: gosec.sarif
 
   # Job 2: Unit Tests
   test:
@@ -104,7 +57,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -207,7 +160,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -389,7 +342,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
