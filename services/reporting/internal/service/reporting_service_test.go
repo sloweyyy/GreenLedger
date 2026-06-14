@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 )
 

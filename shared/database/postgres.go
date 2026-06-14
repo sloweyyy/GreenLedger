@@ -1,3 +1,4 @@
+// Package database provides PostgreSQL connection, migration and health-check helpers built on GORM.
 package database
 
 import (
@@ -7,12 +8,13 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
-	_ "github.com/lib/pq"
-	"github.com/sloweyyy/GreenLedger/shared/config"
-	"github.com/sloweyyy/GreenLedger/shared/logger"
+	_ "github.com/lib/pq" // registers the PostgreSQL database/sql driver
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
+
+	"github.com/sloweyyy/GreenLedger/shared/config"
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // PostgresDB wraps gorm.DB with additional functionality
@@ -127,7 +129,7 @@ func (p *PostgresDB) GetStats() sql.DBStats {
 
 // Migrate runs database migrations for the given models
 func (p *PostgresDB) Migrate(models ...interface{}) error {
-	return p.DB.AutoMigrate(models...)
+	return p.AutoMigrate(models...)
 }
 
 // HealthCheck performs a health check on the database

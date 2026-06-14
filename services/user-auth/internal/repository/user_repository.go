@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // UserRepository handles user data operations
@@ -45,13 +46,13 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 // GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	var user models.User
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("Roles").
 		Preload("Roles.Permissions").
 		Preload("Profile").
 		First(&user, "id = ?", id).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -67,13 +68,13 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 // GetByEmail retrieves a user by email
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("Roles").
 		Preload("Roles.Permissions").
 		Preload("Profile").
 		First(&user, "email = ?", email).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -89,13 +90,13 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 // GetByUsername retrieves a user by username
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("Roles").
 		Preload("Roles.Permissions").
 		Preload("Profile").
 		First(&user, "username = ?", username).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -245,7 +246,7 @@ func (r *UserRepository) Search(ctx context.Context, query string, limit, offset
 	var total int64
 
 	searchPattern := "%" + query + "%"
-	
+
 	dbQuery := r.db.WithContext(ctx).
 		Where("email ILIKE ? OR username ILIKE ? OR first_name ILIKE ? OR last_name ILIKE ?",
 			searchPattern, searchPattern, searchPattern, searchPattern)

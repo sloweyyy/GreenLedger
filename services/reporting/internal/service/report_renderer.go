@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/jung-kurt/gofpdf"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
@@ -33,11 +34,23 @@ func (r *PDFReportRenderer) RenderPDF(ctx context.Context, reportType string, da
 
 	switch reportType {
 	case models.ReportTypeFootprint:
-		return r.renderFootprintPDF(pdf, data.(*models.FootprintReportData))
+		d, ok := data.(*models.FootprintReportData)
+		if !ok {
+			return nil, fmt.Errorf("invalid data type %T for footprint report", data)
+		}
+		return r.renderFootprintPDF(pdf, d)
 	case models.ReportTypeCredits:
-		return r.renderCreditsPDF(pdf, data.(*models.CreditsReportData))
+		d, ok := data.(*models.CreditsReportData)
+		if !ok {
+			return nil, fmt.Errorf("invalid data type %T for credits report", data)
+		}
+		return r.renderCreditsPDF(pdf, d)
 	case models.ReportTypeSummary:
-		return r.renderSummaryPDF(pdf, data.(*models.SummaryReportData))
+		d, ok := data.(*models.SummaryReportData)
+		if !ok {
+			return nil, fmt.Errorf("invalid data type %T for summary report", data)
+		}
+		return r.renderSummaryPDF(pdf, d)
 	default:
 		return nil, fmt.Errorf("unsupported report type for PDF: %s", reportType)
 	}
@@ -55,11 +68,23 @@ func (r *PDFReportRenderer) RenderCSV(ctx context.Context, reportType string, da
 
 	switch reportType {
 	case models.ReportTypeFootprint:
-		return r.renderFootprintCSV(writer, data.(*models.FootprintReportData))
+		d, ok := data.(*models.FootprintReportData)
+		if !ok {
+			return nil, fmt.Errorf("invalid data type %T for footprint report", data)
+		}
+		return r.renderFootprintCSV(writer, d)
 	case models.ReportTypeCredits:
-		return r.renderCreditsCSV(writer, data.(*models.CreditsReportData))
+		d, ok := data.(*models.CreditsReportData)
+		if !ok {
+			return nil, fmt.Errorf("invalid data type %T for credits report", data)
+		}
+		return r.renderCreditsCSV(writer, d)
 	case models.ReportTypeSummary:
-		return r.renderSummaryCSV(writer, data.(*models.SummaryReportData))
+		d, ok := data.(*models.SummaryReportData)
+		if !ok {
+			return nil, fmt.Errorf("invalid data type %T for summary report", data)
+		}
+		return r.renderSummaryCSV(writer, d)
 	default:
 		return nil, fmt.Errorf("unsupported report type for CSV: %s", reportType)
 	}

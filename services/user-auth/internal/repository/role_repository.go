@@ -1,3 +1,4 @@
+// Package repository provides data-access implementations for the user-auth service.
 package repository
 
 import (
@@ -5,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/user-auth/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // RoleRepository handles role data operations
@@ -44,11 +46,11 @@ func (r *RoleRepository) Create(ctx context.Context, role *models.Role) error {
 // GetByID retrieves a role by ID
 func (r *RoleRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Role, error) {
 	var role models.Role
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("Permissions").
 		First(&role, "id = ?", id).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -64,11 +66,11 @@ func (r *RoleRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Rol
 // GetByName retrieves a role by name
 func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Role, error) {
 	var role models.Role
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("Permissions").
 		First(&role, "name = ?", name).Error
-	
+
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, database.ErrNotFound
@@ -84,12 +86,12 @@ func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Ro
 // List retrieves all roles
 func (r *RoleRepository) List(ctx context.Context) ([]*models.Role, error) {
 	var roles []*models.Role
-	
+
 	err := r.db.WithContext(ctx).
 		Preload("Permissions").
 		Order("name").
 		Find(&roles).Error
-	
+
 	if err != nil {
 		r.logger.LogError(ctx, "failed to list roles", err)
 		return nil, fmt.Errorf("failed to list roles: %w", err)
@@ -193,7 +195,7 @@ func (r *PermissionRepository) Create(ctx context.Context, permission *models.Pe
 // GetByID retrieves a permission by ID
 func (r *PermissionRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
 	var permission models.Permission
-	
+
 	err := r.db.WithContext(ctx).First(&permission, "id = ?", id).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -208,7 +210,7 @@ func (r *PermissionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 // GetByName retrieves a permission by name
 func (r *PermissionRepository) GetByName(ctx context.Context, name string) (*models.Permission, error) {
 	var permission models.Permission
-	
+
 	err := r.db.WithContext(ctx).First(&permission, "name = ?", name).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -223,11 +225,11 @@ func (r *PermissionRepository) GetByName(ctx context.Context, name string) (*mod
 // List retrieves all permissions
 func (r *PermissionRepository) List(ctx context.Context) ([]*models.Permission, error) {
 	var permissions []*models.Permission
-	
+
 	err := r.db.WithContext(ctx).
 		Order("resource, action").
 		Find(&permissions).Error
-	
+
 	if err != nil {
 		r.logger.LogError(ctx, "failed to list permissions", err)
 		return nil, fmt.Errorf("failed to list permissions: %w", err)

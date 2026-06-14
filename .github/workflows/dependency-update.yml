@@ -18,7 +18,7 @@ on:
           - all
 
 env:
-  GO_VERSION: "1.23.0"
+  GO_VERSION: "1.25.11"
 
 jobs:
   # Job 1: Update Go Dependencies
@@ -45,7 +45,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -226,7 +226,7 @@ jobs:
                   echo "Consider updating to actions/checkout@v4"
                   ;;
                 "actions/setup-go")
-                  echo "Consider updating to actions/setup-go@v4"
+                  echo "Consider updating to actions/setup-go@v5"
                   ;;
                 "docker/build-push-action")
                   echo "Consider updating to docker/build-push-action@v5"
@@ -249,7 +249,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 

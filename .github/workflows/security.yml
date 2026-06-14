@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: "1.23.0"
+  GO_VERSION: "1.25.11"
 
 jobs:
   # Job 1: Static Application Security Testing (SAST)
@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -74,19 +74,22 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-
-      - name: 📦 Download dependencies
-        run: |
-          go mod download
-          cd shared && go mod download
 
       - name: 🔍 Run govulncheck vulnerability scanner
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          # govulncheck operates per-module; the repo is a go.work workspace, so
+          # running it from the root finds no packages. Scan each module.
+          status=0
+          for module in shared services/calculator services/certifier services/reporting services/tracker services/user-auth services/wallet; do
+            echo "::group::govulncheck $module"
+            (cd "$module" && go mod download && govulncheck ./...) || status=1
+            echo "::endgroup::"
+          done
+          exit $status
 
       - name: 🔍 Run Snyk to check for vulnerabilities
         uses: snyk/actions/golang@master
@@ -286,7 +289,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐹 Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 

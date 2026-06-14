@@ -1,8 +1,10 @@
 module github.com/sloweyyy/GreenLedger
 
-go 1.23
+go 1.25.0
 
-require github.com/stretchr/testify v1.10.0
+toolchain go1.25.11
+
+require github.com/stretchr/testify v1.11.1
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

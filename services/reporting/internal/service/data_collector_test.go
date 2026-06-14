@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 // MockReportingRepository is a mock implementation of ReportingRepository
@@ -141,7 +142,7 @@ func TestCollectSummaryData_MostLeastActiveDays(t *testing.T) {
 
 	dataTie, err := collector.CollectSummaryData(ctx, userID, startDate, endDate)
 	assert.NoError(t, err)
-	assert.Equal(t, day4, dataTie.MostActiveDay) // Expecting earliest day (first in list)
+	assert.Equal(t, day4, dataTie.MostActiveDay)  // Expecting earliest day (first in list)
 	assert.Equal(t, day5, dataTie.LeastActiveDay) // Expecting latest day (last in list)
 
 	// Test Case 3: Single day activity

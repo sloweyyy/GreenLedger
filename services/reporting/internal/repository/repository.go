@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+
 	"github.com/sloweyyy/GreenLedger/services/reporting/internal/models"
 )
 

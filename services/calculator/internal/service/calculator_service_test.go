@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/sloweyyy/GreenLedger/services/calculator/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/calculator/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 // MockCalculationRepository is a mock implementation of CalculationRepository

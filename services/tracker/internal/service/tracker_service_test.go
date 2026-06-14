@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/sloweyyy/GreenLedger/services/tracker/internal/models"
 )
 

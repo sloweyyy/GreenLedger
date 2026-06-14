@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/repository"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"github.com/shopspring/decimal"
 )
 
 // WalletService handles wallet operations
@@ -56,10 +57,10 @@ type DebitBalanceRequest struct {
 
 // TransferCreditsRequest represents a request to transfer credits
 type TransferCreditsRequest struct {
-	FromUserID  string          `json:"from_user_id" binding:"required"`
-	ToUserID    string          `json:"to_user_id" binding:"required"`
-	Amount      decimal.Decimal `json:"amount" binding:"required"`
-	Description string          `json:"description" binding:"required"`
+	FromUserID  string                 `json:"from_user_id" binding:"required"`
+	ToUserID    string                 `json:"to_user_id" binding:"required"`
+	Amount      decimal.Decimal        `json:"amount" binding:"required"`
+	Description string                 `json:"description" binding:"required"`
 	Metadata    map[string]interface{} `json:"metadata"`
 }
 
@@ -98,23 +99,23 @@ type EventPublisher interface {
 
 // BalanceUpdatedEvent represents a balance update event
 type BalanceUpdatedEvent struct {
-	UserID           string          `json:"user_id"`
-	TransactionID    string          `json:"transaction_id"`
-	TransactionType  string          `json:"transaction_type"`
-	Amount           decimal.Decimal `json:"amount"`
-	BalanceAfter     decimal.Decimal `json:"balance_after"`
-	Source           string          `json:"source"`
-	Timestamp        time.Time       `json:"timestamp"`
+	UserID          string          `json:"user_id"`
+	TransactionID   string          `json:"transaction_id"`
+	TransactionType string          `json:"transaction_type"`
+	Amount          decimal.Decimal `json:"amount"`
+	BalanceAfter    decimal.Decimal `json:"balance_after"`
+	Source          string          `json:"source"`
+	Timestamp       time.Time       `json:"timestamp"`
 }
 
 // TransferCompletedEvent represents a transfer completion event
 type TransferCompletedEvent struct {
-	TransferID   string          `json:"transfer_id"`
-	FromUserID   string          `json:"from_user_id"`
-	ToUserID     string          `json:"to_user_id"`
-	Amount       decimal.Decimal `json:"amount"`
-	Description  string          `json:"description"`
-	Timestamp    time.Time       `json:"timestamp"`
+	TransferID  string          `json:"transfer_id"`
+	FromUserID  string          `json:"from_user_id"`
+	ToUserID    string          `json:"to_user_id"`
+	Amount      decimal.Decimal `json:"amount"`
+	Description string          `json:"description"`
+	Timestamp   time.Time       `json:"timestamp"`
 }
 
 // GetBalance retrieves a user's wallet balance

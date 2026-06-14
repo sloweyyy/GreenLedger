@@ -74,11 +74,9 @@ func TestLocalFileStorage_PathTraversal(t *testing.T) {
 	err = storage.Save(ctx, "../outside.txt", []byte("malicious content"))
 	if err == nil {
 		t.Error("Expected error when saving with path traversal '..', got nil")
-	} else {
+	} else if err.Error() == "" {
 		// Verify error message contains expectation
-		if err.Error() == "" {
-			t.Error("Expected error message, got empty string")
-		}
+		t.Error("Expected error message, got empty string")
 	}
 
 	// Case 2: Verify ".." staying inside is fine (if we supported it, but our clean logic removes it)
@@ -111,7 +109,7 @@ func TestLocalFileStorage_ContextCancellation(t *testing.T) {
 
 	err = storage.Save(ctx, "test.txt", []byte("content"))
 	if err == nil {
-		t.Error("Expected error due to cancelled context, got nil")
+		t.Error("Expected error due to canceled context, got nil")
 	}
 	if err != context.Canceled {
 		t.Errorf("Expected context.Canceled error, got %v", err)
@@ -119,7 +117,7 @@ func TestLocalFileStorage_ContextCancellation(t *testing.T) {
 
 	err = storage.Delete(ctx, "test.txt")
 	if err == nil {
-		t.Error("Expected error due to cancelled context, got nil")
+		t.Error("Expected error due to canceled context, got nil")
 	}
 	if err != context.Canceled {
 		t.Errorf("Expected context.Canceled error, got %v", err)

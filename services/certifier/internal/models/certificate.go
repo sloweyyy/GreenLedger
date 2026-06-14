@@ -1,3 +1,4 @@
+// Package models defines the domain entities and persistence mappings for the certifier service.
 package models
 
 import (
@@ -33,7 +34,7 @@ type Certificate struct {
 	RetiredAt         *time.Time      `json:"retired_at"`
 	CreatedAt         time.Time       `json:"created_at"`
 	UpdatedAt         time.Time       `json:"updated_at"`
-	
+
 	// Relationships
 	Verifications []CertificateVerification `gorm:"foreignKey:CertificateID" json:"verifications,omitempty"`
 	Transfers     []CertificateTransfer     `gorm:"foreignKey:CertificateID" json:"transfers,omitempty"`
@@ -50,26 +51,26 @@ type CertificateVerification struct {
 	Evidence      string    `gorm:"type:text" json:"evidence"`
 	VerifiedAt    time.Time `gorm:"not null" json:"verified_at"`
 	CreatedAt     time.Time `json:"created_at"`
-	
+
 	// Relationship
 	Certificate Certificate `gorm:"foreignKey:CertificateID" json:"-"`
 }
 
 // CertificateTransfer represents a transfer of certificate ownership
 type CertificateTransfer struct {
-	ID            uuid.UUID `gorm:"primary_key" json:"id"`
-	CertificateID uuid.UUID `gorm:"not null;index" json:"certificate_id"`
-	FromUserID    string    `gorm:"not null;index" json:"from_user_id"`
-	ToUserID      string    `gorm:"not null;index" json:"to_user_id"`
-	TransferType  string    `gorm:"not null" json:"transfer_type"`
+	ID            uuid.UUID       `gorm:"primary_key" json:"id"`
+	CertificateID uuid.UUID       `gorm:"not null;index" json:"certificate_id"`
+	FromUserID    string          `gorm:"not null;index" json:"from_user_id"`
+	ToUserID      string          `gorm:"not null;index" json:"to_user_id"`
+	TransferType  string          `gorm:"not null" json:"transfer_type"`
 	Price         decimal.Decimal `gorm:"type:numeric" json:"price"`
-	Currency      string    `json:"currency"`
-	Status        string    `gorm:"not null;default:'pending'" json:"status"`
-	TxHash        string    `gorm:"index" json:"tx_hash"`
-	TransferredAt *time.Time `json:"transferred_at"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	
+	Currency      string          `json:"currency"`
+	Status        string          `gorm:"not null;default:'pending'" json:"status"`
+	TxHash        string          `gorm:"index" json:"tx_hash"`
+	TransferredAt *time.Time      `json:"transferred_at"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+
 	// Relationship
 	Certificate Certificate `gorm:"foreignKey:CertificateID" json:"-"`
 }
@@ -110,7 +111,7 @@ type CertificateProject struct {
 	EndDate          time.Time       `json:"end_date"`
 	CreatedAt        time.Time       `json:"created_at"`
 	UpdatedAt        time.Time       `json:"updated_at"`
-	
+
 	// Relationships
 	Certificates []Certificate `gorm:"foreignKey:ProjectName;references:Name" json:"certificates,omitempty"`
 }
@@ -160,10 +161,10 @@ func (CertificateProject) TableName() string      { return "certificate_projects
 
 // Certificate types
 const (
-	CertificateTypeOffset     = "offset"
-	CertificateTypeReduction  = "reduction"
-	CertificateTypeRemoval    = "removal"
-	CertificateTypeAvoidance  = "avoidance"
+	CertificateTypeOffset    = "offset"
+	CertificateTypeReduction = "reduction"
+	CertificateTypeRemoval   = "removal"
+	CertificateTypeAvoidance = "avoidance"
 )
 
 // Certificate statuses
@@ -172,7 +173,7 @@ const (
 	CertificateStatusIssued    = "issued"
 	CertificateStatusVerified  = "verified"
 	CertificateStatusRetired   = "retired"
-	CertificateStatusCancelled = "cancelled"
+	CertificateStatusCancelled = "canceled"
 	CertificateStatusExpired   = "expired"
 )
 
@@ -189,7 +190,7 @@ const (
 	TransferStatusPending   = "pending"
 	TransferStatusCompleted = "completed"
 	TransferStatusFailed    = "failed"
-	TransferStatusCancelled = "cancelled"
+	TransferStatusCancelled = "canceled"
 )
 
 // Verification statuses
@@ -201,14 +202,14 @@ const (
 
 // Project types
 const (
-	ProjectTypeForestry      = "forestry"
-	ProjectTypeRenewable     = "renewable_energy"
-	ProjectTypeMethane       = "methane_capture"
-	ProjectTypeSoil          = "soil_carbon"
-	ProjectTypeDAC           = "direct_air_capture"
-	ProjectTypeBiomass       = "biomass"
-	ProjectTypeTransport     = "transport"
-	ProjectTypeEfficiency    = "energy_efficiency"
+	ProjectTypeForestry   = "forestry"
+	ProjectTypeRenewable  = "renewable_energy"
+	ProjectTypeMethane    = "methane_capture"
+	ProjectTypeSoil       = "soil_carbon"
+	ProjectTypeDAC        = "direct_air_capture"
+	ProjectTypeBiomass    = "biomass"
+	ProjectTypeTransport  = "transport"
+	ProjectTypeEfficiency = "energy_efficiency"
 )
 
 // Standards

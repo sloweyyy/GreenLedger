@@ -1,3 +1,4 @@
+// Package models defines the domain entities and persistence mappings for the wallet service.
 package models
 
 import (
@@ -19,44 +20,44 @@ type Wallet struct {
 	LastUpdated      time.Time       `gorm:"not null;default:CURRENT_TIMESTAMP" json:"last_updated"`
 	CreatedAt        time.Time       `json:"created_at"`
 	UpdatedAt        time.Time       `json:"updated_at"`
-	
+
 	// Relationships
 	Transactions []Transaction `gorm:"foreignKey:UserID;references:UserID" json:"transactions,omitempty"`
 }
 
 // Transaction represents a credit transaction
 type Transaction struct {
-	ID            uuid.UUID       `gorm:"primary_key" json:"id"`
-	UserID        string          `gorm:"not null;index" json:"user_id"`
-	Type          string          `gorm:"not null;index" json:"type"`
-	Status        string          `gorm:"not null;index;default:'pending'" json:"status"`
-	Amount        decimal.Decimal `gorm:"type:numeric;not null" json:"amount"`
-	BalanceAfter  decimal.Decimal `gorm:"type:numeric;not null" json:"balance_after"`
-	Source        string          `gorm:"not null" json:"source"`
-	Description   string          `gorm:"not null" json:"description"`
-	ReferenceID   string          `gorm:"index" json:"reference_id"`
-	FromUserID    string          `gorm:"index" json:"from_user_id"`
-	ToUserID      string          `gorm:"index" json:"to_user_id"`
-	Metadata      string          `gorm:"type:text" json:"metadata"`
-	ProcessedAt   *time.Time      `json:"processed_at"`
-	CreatedAt     time.Time       `json:"created_at"`
-	UpdatedAt     time.Time       `json:"updated_at"`
-	
+	ID           uuid.UUID       `gorm:"primary_key" json:"id"`
+	UserID       string          `gorm:"not null;index" json:"user_id"`
+	Type         string          `gorm:"not null;index" json:"type"`
+	Status       string          `gorm:"not null;index;default:'pending'" json:"status"`
+	Amount       decimal.Decimal `gorm:"type:numeric;not null" json:"amount"`
+	BalanceAfter decimal.Decimal `gorm:"type:numeric;not null" json:"balance_after"`
+	Source       string          `gorm:"not null" json:"source"`
+	Description  string          `gorm:"not null" json:"description"`
+	ReferenceID  string          `gorm:"index" json:"reference_id"`
+	FromUserID   string          `gorm:"index" json:"from_user_id"`
+	ToUserID     string          `gorm:"index" json:"to_user_id"`
+	Metadata     string          `gorm:"type:text" json:"metadata"`
+	ProcessedAt  *time.Time      `json:"processed_at"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+
 	// Relationship
 	Wallet Wallet `gorm:"foreignKey:UserID;references:UserID" json:"-"`
 }
 
 // TransactionBatch represents a batch of transactions for atomic processing
 type TransactionBatch struct {
-	ID           uuid.UUID `gorm:"primary_key" json:"id"`
-	BatchID      string    `gorm:"uniqueIndex;not null" json:"batch_id"`
-	Status       string    `gorm:"not null;default:'pending'" json:"status"`
-	TotalAmount  decimal.Decimal `gorm:"type:numeric;not null" json:"total_amount"`
-	Description  string    `json:"description"`
-	ProcessedAt  *time.Time `json:"processed_at"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	
+	ID          uuid.UUID       `gorm:"primary_key" json:"id"`
+	BatchID     string          `gorm:"uniqueIndex;not null" json:"batch_id"`
+	Status      string          `gorm:"not null;default:'pending'" json:"status"`
+	TotalAmount decimal.Decimal `gorm:"type:numeric;not null" json:"total_amount"`
+	Description string          `json:"description"`
+	ProcessedAt *time.Time      `json:"processed_at"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+
 	// Relationships
 	Transactions []Transaction `gorm:"foreignKey:ReferenceID;references:BatchID" json:"transactions,omitempty"`
 }
@@ -147,22 +148,22 @@ const (
 	TransactionStatusPending   = "pending"
 	TransactionStatusCompleted = "completed"
 	TransactionStatusFailed    = "failed"
-	TransactionStatusCancelled = "cancelled"
+	TransactionStatusCancelled = "canceled"
 	TransactionStatusExpired   = "expired"
 )
 
 // Credit sources
 const (
-	CreditSourceEcoActivity   = "eco_activity"
-	CreditSourceCarbonOffset  = "carbon_offset"
-	CreditSourcePurchase      = "purchase"
-	CreditSourceReward        = "reward"
-	CreditSourceTransfer      = "transfer"
-	CreditSourceAdjustment    = "adjustment"
-	CreditSourceRefund        = "refund"
-	CreditSourceBonus         = "bonus"
-	CreditSourceChallenge     = "challenge"
-	CreditSourceReferral      = "referral"
+	CreditSourceEcoActivity  = "eco_activity"
+	CreditSourceCarbonOffset = "carbon_offset"
+	CreditSourcePurchase     = "purchase"
+	CreditSourceReward       = "reward"
+	CreditSourceTransfer     = "transfer"
+	CreditSourceAdjustment   = "adjustment"
+	CreditSourceRefund       = "refund"
+	CreditSourceBonus        = "bonus"
+	CreditSourceChallenge    = "challenge"
+	CreditSourceReferral     = "referral"
 )
 
 // Batch statuses
@@ -170,7 +171,7 @@ const (
 	BatchStatusPending   = "pending"
 	BatchStatusProcessed = "processed"
 	BatchStatusFailed    = "failed"
-	BatchStatusCancelled = "cancelled"
+	BatchStatusCancelled = "canceled"
 )
 
 // Helper methods for Wallet
@@ -196,16 +197,16 @@ func (t *Transaction) IsPending() bool {
 }
 
 func (t *Transaction) IsCredit() bool {
-	return t.Type == TransactionTypeCreditEarned || 
-		   t.Type == TransactionTypeTransferIn || 
-		   t.Type == TransactionTypeRefund ||
-		   t.Type == TransactionTypeBonus
+	return t.Type == TransactionTypeCreditEarned ||
+		t.Type == TransactionTypeTransferIn ||
+		t.Type == TransactionTypeRefund ||
+		t.Type == TransactionTypeBonus
 }
 
 func (t *Transaction) IsDebit() bool {
-	return t.Type == TransactionTypeCreditSpent || 
-		   t.Type == TransactionTypeTransferOut || 
-		   t.Type == TransactionTypePenalty
+	return t.Type == TransactionTypeCreditSpent ||
+		t.Type == TransactionTypeTransferOut ||
+		t.Type == TransactionTypePenalty
 }
 
 // Helper methods for CreditReservation

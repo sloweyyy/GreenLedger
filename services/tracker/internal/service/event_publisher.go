@@ -1,3 +1,4 @@
+// Package service implements the eco-activity tracking business logic and event publishing.
 package service
 
 import (
@@ -6,8 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sloweyyy/GreenLedger/shared/logger"
 	"github.com/segmentio/kafka-go"
+
+	"github.com/sloweyyy/GreenLedger/shared/logger"
 )
 
 // KafkaEventPublisher implements EventPublisher using Kafka

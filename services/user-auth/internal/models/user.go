@@ -1,3 +1,4 @@
+// Package models defines the domain entities and persistence mappings for the user-auth service.
 package models
 
 import (
@@ -10,32 +11,32 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID          uuid.UUID `gorm:"primary_key" json:"id"`
-	Email       string    `gorm:"uniqueIndex;not null" json:"email"`
-	Username    string    `gorm:"uniqueIndex;not null" json:"username"`
-	FirstName   string    `gorm:"not null" json:"first_name"`
-	LastName    string    `gorm:"not null" json:"last_name"`
-	Password    string    `gorm:"not null" json:"-"` // Never include in JSON
-	IsActive    bool      `gorm:"default:true" json:"is_active"`
-	IsVerified  bool      `gorm:"default:false" json:"is_verified"`
+	ID          uuid.UUID  `gorm:"primary_key" json:"id"`
+	Email       string     `gorm:"uniqueIndex;not null" json:"email"`
+	Username    string     `gorm:"uniqueIndex;not null" json:"username"`
+	FirstName   string     `gorm:"not null" json:"first_name"`
+	LastName    string     `gorm:"not null" json:"last_name"`
+	Password    string     `gorm:"not null" json:"-"` // Never include in JSON
+	IsActive    bool       `gorm:"default:true" json:"is_active"`
+	IsVerified  bool       `gorm:"default:false" json:"is_verified"`
 	LastLoginAt *time.Time `json:"last_login_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+
 	// Relationships
-	Roles    []Role    `gorm:"many2many:user_roles;" json:"roles,omitempty"`
-	Sessions []Session `gorm:"foreignKey:UserID" json:"-"`
+	Roles    []Role       `gorm:"many2many:user_roles;" json:"roles,omitempty"`
+	Sessions []Session    `gorm:"foreignKey:UserID" json:"-"`
 	Profile  *UserProfile `gorm:"foreignKey:UserID" json:"profile,omitempty"`
 }
 
 // Role represents a user role
 type Role struct {
-	ID          uuid.UUID `gorm:"primary_key" json:"id"`
-	Name        string    `gorm:"uniqueIndex;not null" json:"name"`
-	Description string    `json:"description"`
+	ID          uuid.UUID    `gorm:"primary_key" json:"id"`
+	Name        string       `gorm:"uniqueIndex;not null" json:"name"`
+	Description string       `json:"description"`
 	Permissions []Permission `gorm:"many2many:role_permissions;" json:"permissions,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   time.Time    `json:"updated_at"`
 }
 
 // Permission represents a system permission
@@ -60,25 +61,25 @@ type Session struct {
 	UserAgent string    `json:"user_agent"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	
+
 	// Relationship
 	User User `gorm:"foreignKey:UserID" json:"-"`
 }
 
 // UserProfile represents extended user profile information
 type UserProfile struct {
-	ID          uuid.UUID `gorm:"primary_key" json:"id"`
-	UserID      uuid.UUID `gorm:"uniqueIndex;not null" json:"user_id"`
-	Avatar      string    `json:"avatar"`
-	Bio         string    `json:"bio"`
-	Location    string    `json:"location"`
-	Website     string    `json:"website"`
-	DateOfBirth *time.Time `json:"date_of_birth"`
-	PhoneNumber string    `json:"phone_number"`
+	ID          uuid.UUID              `gorm:"primary_key" json:"id"`
+	UserID      uuid.UUID              `gorm:"uniqueIndex;not null" json:"user_id"`
+	Avatar      string                 `json:"avatar"`
+	Bio         string                 `json:"bio"`
+	Location    string                 `json:"location"`
+	Website     string                 `json:"website"`
+	DateOfBirth *time.Time             `json:"date_of_birth"`
+	PhoneNumber string                 `json:"phone_number"`
 	Preferences map[string]interface{} `gorm:"type:text;serializer:json" json:"preferences"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	
+	CreatedAt   time.Time              `json:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at"`
+
 	// Relationship
 	User User `gorm:"foreignKey:UserID" json:"-"`
 }
@@ -91,7 +92,7 @@ type PasswordResetToken struct {
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
 	IsUsed    bool      `gorm:"default:false" json:"is_used"`
 	CreatedAt time.Time `json:"created_at"`
-	
+
 	// Relationship
 	User User `gorm:"foreignKey:UserID" json:"-"`
 }
@@ -104,7 +105,7 @@ type EmailVerificationToken struct {
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
 	IsUsed    bool      `gorm:"default:false" json:"is_used"`
 	CreatedAt time.Time `json:"created_at"`
-	
+
 	// Relationship
 	User User `gorm:"foreignKey:UserID" json:"-"`
 }
@@ -198,18 +199,18 @@ func (s *Session) IsSessionValid() bool {
 }
 
 // Table names
-func (User) TableName() string                      { return "users" }
-func (Role) TableName() string                      { return "roles" }
-func (Permission) TableName() string                { return "permissions" }
-func (Session) TableName() string                   { return "sessions" }
-func (UserProfile) TableName() string               { return "user_profiles" }
-func (PasswordResetToken) TableName() string        { return "password_reset_tokens" }
-func (EmailVerificationToken) TableName() string    { return "email_verification_tokens" }
+func (User) TableName() string                   { return "users" }
+func (Role) TableName() string                   { return "roles" }
+func (Permission) TableName() string             { return "permissions" }
+func (Session) TableName() string                { return "sessions" }
+func (UserProfile) TableName() string            { return "user_profiles" }
+func (PasswordResetToken) TableName() string     { return "password_reset_tokens" }
+func (EmailVerificationToken) TableName() string { return "email_verification_tokens" }
 
 // Constants for default roles
 const (
-	RoleAdmin = "admin"
-	RoleUser  = "user"
+	RoleAdmin     = "admin"
+	RoleUser      = "user"
 	RoleModerator = "moderator"
 )
 

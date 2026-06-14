@@ -1,3 +1,4 @@
+// Package monitoring provides Prometheus metrics collection and HTTP instrumentation.
 package monitoring
 
 import (

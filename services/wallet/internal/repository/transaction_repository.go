@@ -1,3 +1,4 @@
+// Package repository provides data-access implementations for the wallet service.
 package repository
 
 import (
@@ -6,10 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/sloweyyy/GreenLedger/services/wallet/internal/models"
 	"github.com/sloweyyy/GreenLedger/shared/database"
 	"github.com/sloweyyy/GreenLedger/shared/logger"
-	"gorm.io/gorm"
 )
 
 // TransactionRepository handles transaction data operations
@@ -41,7 +43,7 @@ func (r *TransactionRepository) Create(ctx context.Context, transaction *models.
 // GetByID retrieves a transaction by ID
 func (r *TransactionRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Transaction, error) {
 	var transaction models.Transaction
-	
+
 	err := r.db.WithContext(ctx).First(&transaction, "id = ?", id).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -118,12 +120,12 @@ func (r *TransactionRepository) GetByUserIDAndDateRange(ctx context.Context, use
 // GetByReferenceID retrieves transactions by reference ID
 func (r *TransactionRepository) GetByReferenceID(ctx context.Context, referenceID string) ([]*models.Transaction, error) {
 	var transactions []*models.Transaction
-	
+
 	err := r.db.WithContext(ctx).
 		Where("reference_id = ?", referenceID).
 		Order("created_at DESC").
 		Find(&transactions).Error
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions by reference ID: %w", err)
 	}
@@ -242,12 +244,12 @@ func (r *TransactionRepository) GetTransactionSummary(ctx context.Context, userI
 
 // TransactionSummary represents a summary of transactions
 type TransactionSummary struct {
-	UserID              string    `json:"user_id"`
-	TotalTransactions   int64     `json:"total_transactions"`
-	CreditTransactions  int64     `json:"credit_transactions"`
-	DebitTransactions   int64     `json:"debit_transactions"`
-	TotalCredits        float64   `json:"total_credits"`
-	TotalDebits         float64   `json:"total_debits"`
-	StartDate           time.Time `json:"start_date"`
-	EndDate             time.Time `json:"end_date"`
+	UserID             string    `json:"user_id"`
+	TotalTransactions  int64     `json:"total_transactions"`
+	CreditTransactions int64     `json:"credit_transactions"`
+	DebitTransactions  int64     `json:"debit_transactions"`
+	TotalCredits       float64   `json:"total_credits"`
+	TotalDebits        float64   `json:"total_debits"`
+	StartDate          time.Time `json:"start_date"`
+	EndDate            time.Time `json:"end_date"`
 }
