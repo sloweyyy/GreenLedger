@@ -20,6 +20,27 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Job 0: Deploy preflight — verify cloud credentials before attempting any EKS
+  # deploy. GitHub does not allow the secrets context in a job-level `if:`, so we
+  # surface a boolean output here and gate the deploy jobs on it. When AWS creds
+  # are absent (a fork, or a testing/practice clone) the deploy jobs are skipped
+  # rather than failing the whole workflow.
+  preflight:
+    name: 🔎 Deploy Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      has_aws: ${{ steps.check.outputs.has_aws }}
+    steps:
+      - name: 🔐 Check for AWS credentials
+        id: check
+        run: |
+          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ] && [ -n "${{ secrets.EKS_CLUSTER_NAME_STAGING }}" ]; then
+            echo "has_aws=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_aws=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::AWS credentials not configured — EKS deploy jobs will be skipped."
+          fi
+
   # Job 1: Build and Push Production Images
   build-production:
     name: 🔨 Build Production Images
@@ -95,9 +116,9 @@ jobs:
   deploy-staging:
     name: 🚀 Deploy to Staging
     runs-on: ubuntu-latest
-    needs: build-production
+    needs: [build-production, preflight]
     environment: staging
-    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    if: (github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging') && needs.preflight.outputs.has_aws == 'true'
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -167,9 +188,9 @@ jobs:
   deploy-production:
     name: 🏭 Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build-production, deploy-staging]
+    needs: [build-production, deploy-staging, preflight]
     environment: production
-    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production'
+    if: (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production') && needs.preflight.outputs.has_aws == 'true'
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
